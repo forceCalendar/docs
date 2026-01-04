@@ -127,7 +127,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} ForceCalendar. Built with Docusaurus.`,
+      copyright: ` `,
     },
     prism: {
       theme: prismThemes.github,
