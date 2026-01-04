@@ -1,30 +1,84 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Custom styles for ForceCalendar Documentation
  */
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary: #0070d2;
+  --ifm-color-primary-dark: #0064bd;
+  --ifm-color-primary-darker: #005eb3;
+  --ifm-color-primary-darkest: #004e96;
+  --ifm-color-primary-light: #1a7eda;
+  --ifm-color-primary-lighter: #2685dd;
+  --ifm-color-primary-lightest: #4da1e4;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
-[data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+/* For readability, wrapper the docs in a clean card on desktop */
+@media (min-width: 997px) {
+  .markdown {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  html[data-theme='dark'] .markdown {
+    background: #1b1b1d;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.hero--primary {
+  --ifm-hero-background-color: #0070d2;
+  background-image: linear-gradient(135deg, #0070d2 0%, #00a1e0 100%);
+  padding: 6rem 2rem;
+}
+
+.navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.footer {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+/* ELI5 Concept Cards */
+.eli5-card {
+  background: #f0f7ff;
+  border-left: 5px solid #0070d2;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+html[data-theme='dark'] .eli5-card {
+  background: #162433;
+  border-left-color: #1a7eda;
+}
+
+.eli5-card h3 {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eli5-card p:last-child {
+  margin-bottom: 0;
+}
+
+/* Feature Grid */
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
 }

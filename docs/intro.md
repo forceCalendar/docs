@@ -1,56 +1,41 @@
-# Introduction to ForceCalendar
+# Welcome to ForceCalendar! 📅
 
-Welcome to ForceCalendar - the enterprise-grade calendar solution designed for Salesforce and web applications.
+Hi there! If you want to build a calendar for your website or for Salesforce, you've come to the right place. 
 
-## What is ForceCalendar?
+Think of **ForceCalendar** like a big box of LEGOs. We give you all the pieces you need to build a beautiful calendar that works exactly how you want it to.
 
-ForceCalendar is a comprehensive calendar system that provides:
+---
 
-- **Core Calendar Engine**: A framework-agnostic calendar library with timezone support
-- **Web Components**: Ready-to-use UI components for easy integration
-- **Salesforce Integration**: Lightning Web Components and Apex support
-- **Advanced Features**: Recurrence, search, filtering, and performance optimization
+<div class="eli5-card">
+  <h3>🧒 What is it, really?</h3>
+  <p>Imagine you have a <strong>Robot Brain</strong> that knows everything about time, dates, and meetings. Then, you have a <strong>Pretty Suit</strong> that the brain wears so people can see the dates and click on them. That's ForceCalendar!</p>
+</div>
 
-## Key Features
+## The Three Main Parts
 
-### Core Engine
-- ✅ Framework-agnostic JavaScript calendar logic
-- ✅ Comprehensive timezone support with automatic conversion
-- ✅ Event management with validation and normalization
-- ✅ Recurrence rule parsing and event generation
-- ✅ Spatial indexing for efficient date-based queries
-- ✅ State management and event-driven architecture
+To make things easy, we split ForceCalendar into three simple parts:
 
-### Web Interface
-- ✅ Web Components for easy integration
-- ✅ Multiple views (Month, Week, Day, List)
-- ✅ Responsive design with theming support
-- ✅ Accessibility compliance
-- ✅ Customizable and extensible
+### 1. The Brain (`@forcecalendar/core`)
+This is the smartest part. It doesn't have a "face" (you can't see it), but it knows:
+- How to handle different time zones (so you aren't late for your zoom call in London!).
+- How to handle "Every Wednesday" meetings without you having to type them in every time.
+- How to find events really, really fast.
 
-### Salesforce Integration
-- ✅ Lightning Web Component wrapper
-- ✅ Apex controller support
-- ✅ Locker Service compatibility
-- ✅ Self-contained deployment packages
+### 2. The Face (`@forcecalendar/interface`)
+This is the part people actually see and touch. 
+- It has buttons to go to the "Next Month."
+- It has pretty colors.
+- It works on any website, like magic!
 
-## Who is ForceCalendar for?
+### 3. The Salesforce Suit (`salesforce/`)
+If you use Salesforce, we have a special version that fits perfectly inside it. It's like putting a custom-tailored suit on our calendar so it can live happily in the Salesforce world.
 
-ForceCalendar is designed for:
+---
 
-- **Salesforce developers** building calendar functionality in LWC/Aura
-- **Web developers** needing a robust calendar solution
-- **Enterprise applications** requiring advanced scheduling features
-- **Developers** who need timezone-aware calendar functionality
-- **Teams** building applications with complex event management
+## Why should I use it?
 
-## Getting Help
+- **It's super fast**: Even if you have 10,000 events, it won't lag.
+- **It's helpful**: It warns you if you try to book two things at the same time.
+- **It's friendly**: It works with React, Vue, Salesforce, or just plain old HTML.
 
-- **Documentation**: You're reading it! 📚
-- **GitHub Issues**: [https://github.com/forcecalendar/core/issues](https://github.com/forcecalendar/core/issues)
-- **Discussions**: [https://github.com/forcecalendar/core/discussions](https://github.com/forcecalendar/core/discussions)
-- **Website**: [https://forcecalendar.org](https://forcecalendar.org)
-
-## Next Steps
-
-Ready to get started? Check out our [Installation Guide](installation) to begin using ForceCalendar in your project!
+Ready to start building? Let's [install it!](installation)

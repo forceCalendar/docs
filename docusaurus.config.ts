@@ -69,7 +69,12 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
-          label: 'Docs',
+          label: 'Learn (ELI5)',
+        },
+        {
+          to: '/docs/api',
+          label: 'API (Coming Soon)',
+          position: 'left'
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {

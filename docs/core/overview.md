@@ -1,32 +1,45 @@
-# Core Overview
+# The Brain (Core Overview)
 
-The `@forcecalendar/core` library is the heart of the ForceCalendar ecosystem. It provides all the logic for calendar management, event handling, and recurrence without being tied to any specific UI framework.
+Welcome to the inner workings of ForceCalendar! This is what we call the **Core**. 
 
-## Key Concepts
+Imagine the Core is a very organized librarian who lives inside your computer. They don't have a screen or buttons, but they are amazing at keeping track of time.
 
-### Calendar Engine
-The `Calendar` class is the main entry point. It manages the state, configuration, and event store.
+---
 
-### Event Store
-A high-performance store for calendar events, utilizing spatial indexing to allow for rapid querying of events within specific date ranges.
+## What does the Brain do?
 
-### Recurrence Engine
-Handles complex recurring event patterns (RRule) and expands them into individual event instances for rendering.
+### 1. It's a Time Traveler (Timezones)
+Most computers get confused when you talk about "10:00 AM" because it's a different time in New York than it is in Tokyo.
+The Brain is a pro at this. You just tell it where you are, and it makes sure every meeting shows up at the right time for everyone.
 
-### Timezone Management
-Built-in support for IANA timezones, ensuring events are correctly displayed and adjusted across different regions.
+### 2. It has an Amazing Memory (Event Store)
+The Brain uses something called **Spatial Indexing**. 
+- **The old way**: Looking through a giant pile of 1,000 papers to find one date. (Slow! 🐢)
+- **Our way**: Like having a perfectly organized filing cabinet where the Brain can find exactly what you need in a split second. (Fast! ⚡)
 
-## Usage Example
+### 3. It's Great at Patterns (Recurrence)
+Do you have a "Pizza Friday" every week? You only have to tell the Brain once. 
+It knows that "Every Friday" means this week, next week, and even three years from now! It calculates these dates only when you look at them, so it doesn't get tired.
+
+---
+
+## How to talk to the Brain
+
+If you are a coder, you talk to the Brain like this:
 
 ```javascript
 import { Calendar } from '@forcecalendar/core';
 
-const calendar = new Calendar({
-  timeZone: 'UTC',
-  initialView: 'month'
+// Create a new Brain
+const myBrain = new Calendar({
+  timeZone: 'UTC'
 });
 
-calendar.on('eventAdd', (event) => {
-  console.log('Event added:', event.title);
+// Give the Brain a task
+myBrain.addEvent({
+  title: 'Eat Ice Cream',
+  start: new Date()
 });
 ```
+
+The Brain will now remember that event and help you show it on a calendar later!
