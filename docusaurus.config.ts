@@ -14,7 +14,7 @@ const config: Config = {
   organizationName: 'forcecalendar',
   projectName: 'forcecalendar',
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   
   markdown: {

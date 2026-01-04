@@ -169,6 +169,5 @@ function CalendarComponent() {
 
 Now that you have ForceCalendar installed, check out our:
 
-- [Quick Start Guide](quick-start) - Get up and running quickly
-- [Core Concepts](core/calendar) - Learn about the calendar architecture
-- [API Reference](/api) - Detailed API documentation
+- [Core Overview](core/overview) - Learn about the calendar architecture
+- API Reference (Coming Soon) - Detailed API documentation
