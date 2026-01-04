@@ -15,11 +15,11 @@ const config: Config = {
   projectName: 'forcecalendar',
 
   onBrokenLinks: 'throw',
+  onBrokenMarkdownLinks: 'warn',
   
   markdown: {
     format: 'detect',
     mermaid: true,
-    onBrokenMarkdownLinks: 'warn',
     preprocessor: ({filePath, fileContent}) => {
       return fileContent;
     },
@@ -71,11 +71,6 @@ const config: Config = {
           position: 'left',
           label: 'Docs',
         },
-        // {
-        //   to: '/api',
-        //   label: 'API Reference',
-        //   position: 'left'
-        // },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
           href: 'https://github.com/forcecalendar/forceCalendar',
