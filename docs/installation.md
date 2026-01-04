@@ -1,173 +1,67 @@
 # Installation
 
-Learn how to install and set up ForceCalendar in your project.
+Ready to give your app a brain and a face? Let's get ForceCalendar installed!
 
-## Prerequisites
+---
 
-Before installing ForceCalendar, ensure you have:
-
-- Node.js 16+ (for web projects)
-- npm or yarn package manager
-- Basic knowledge of JavaScript/TypeScript
-
-## Installation Methods
-
-### Core Library (JavaScript)
-
-Install the core calendar engine:
+## 🧠 Step 1: Install the Brain
+If you want to handle the logic yourself, start here.
 
 ```bash
 npm install @forcecalendar/core
-# or
-yarn add @forcecalendar/core
 ```
 
-### Web Interface
-
-Install the web components interface:
+## 🎨 Step 2: Install the Face
+If you want the pretty calendar component, grab the interface.
 
 ```bash
 npm install @forcecalendar/interface
-# or
-yarn add @forcecalendar/interface
 ```
 
-### Salesforce Integration
+---
 
-For Salesforce projects, use our pre-built LWC:
+## ☁️ Step 3: Using with Salesforce
+ForceCalendar is a best friend to Salesforce. To get it into your Org:
 
-```bash
-# Clone the Salesforce integration repo
-git clone https://github.com/forcecalendar/salesforce.git
-cd salesforce
+1. **Clone the repo**:
+   ```bash
+   git clone https://github.com/forcecalendar/salesforce.git
+   ```
+2. **Build the magic**:
+   ```bash
+   npm run build
+   ```
+3. **Deploy to Salesforce**:
+   ```bash
+   sf project deploy start
+   ```
 
-# Build the distribution
-npm run build
+---
 
-# Deploy to your Salesforce org
-sf project deploy start
-```
+## 🚀 Quick Start Example
 
-## Basic Setup
-
-### Using Core Library
-
-```javascript
-import { Calendar, Event } from '@forcecalendar/core';
-
-// Create a calendar instance
-const calendar = new Calendar({
-  timeZone: 'America/New_York',
-  view: 'month'
-});
-
-// Add an event
-const event = new Event({
-  id: 'meeting-1',
-  title: 'Team Meeting',
-  start: new Date('2024-12-25T10:00:00'),
-  end: new Date('2024-12-25T11:00:00'),
-  timeZone: 'America/New_York'
-});
-
-calendar.addEvent(event);
-```
-
-### Using Web Components
+Want to see it in action right now? Paste this into your HTML file:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ForceCalendar Demo</title>
-  <script type="module" src="@forcecalendar/interface"></script>
+  <title>My First Calendar</title>
+  <!-- Load the Face -->
+  <script type="module" src="https://unpkg.com/@forcecalendar/interface"></script>
 </head>
 <body>
+  <!-- Use the Sticker -->
   <force-calendar 
-    view="month"
-    timezone="America/New_York"
-    height="800px">
+    view="month" 
+    timezone="UTC"
+    style="height: 800px;">
   </force-calendar>
 </body>
 </html>
 ```
 
-### Using with React
-
-```jsx
-import React, { useEffect, useRef } from 'react';
-import '@forcecalendar/interface';
-
-function CalendarComponent() {
-  const calendarRef = useRef(null);
-
-  useEffect(() => {
-    if (calendarRef.current) {
-      // Calendar is ready
-      const calendar = calendarRef.current;
-      calendar.addEvent({
-        id: 'event-1',
-        title: 'React Meeting',
-        start: new Date(),
-        end: new Date(Date.now() + 3600000)
-      });
-    }
-  }, []);
-
-  return (
-    <force-calendar 
-      ref={calendarRef}
-      view="week"
-      timezone="UTC">
-    </force-calendar>
-  );
-}
-```
-
-## Salesforce-Specific Setup
-
-### Lightning Web Component
-
-1. **Deploy the LWC**:
-   ```bash
-   sf project deploy start --source-dir force-app/main/default/lwc
-   ```
-
-2. **Use in your component**:
-   ```html
-   <template>
-     <c-forceCalendar 
-       view="month"
-       oncalendarevent="handleCalendarEvent">
-     </c-forceCalendar>
-   </template>
-   ```
-
-3. **JavaScript controller**:
-   ```javascript
-   import { LightningElement } from 'lwc';
-   import getEvents from '@salesforce/apex/ForceCalendarController.getEvents';
-   
-   export default class MyCalendar extends LightningElement {
-     handleCalendarEvent(event) {
-       console.log('Calendar event:', event.detail);
-     }
-     
-     connectedCallback() {
-       getEvents()
-         .then(events => {
-           this.template.querySelector('c-forceCalendar').setEvents(events);
-         })
-         .catch(error => {
-           console.error('Error loading events:', error);
-         });
-     }
-   }
-   ```
-
-## Next Steps
-
-Now that you have ForceCalendar installed, check out our:
-
-- [Core Overview](core/overview) - Learn about the calendar architecture
-- API Reference (Coming Soon) - Detailed API documentation
+<div class="eli5-card">
+  <h3>💡 Pro Tip</h3>
+  <p>Remember to give your <code>&lt;force-calendar&gt;</code> a height! If you don't, it will be invisible because it doesn't know how tall it should be.</p>
+</div>

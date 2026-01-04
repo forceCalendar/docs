@@ -3,25 +3,25 @@ import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <header className={clsx('hero hero--primary')}>
-      <div className="container">
-        <h1 className="hero__title" style={{fontSize: '4rem', fontWeight: '800'}}>
+      <div className="container" style={{textAlign: 'center', position: 'relative', zIndex: 1}}>
+        <h1 className="hero__title" style={{fontSize: '5rem', fontWeight: '900', marginBottom: '1.5rem'}}>
           {siteConfig.title}
         </h1>
-        <p className="hero__subtitle" style={{fontSize: '1.5rem', opacity: '0.9'}}>
-          Like LEGOs for your calendar. Build something amazing in minutes.
+        <p className="hero__subtitle" style={{fontSize: '1.5rem', color: '#a8a8a8', maxWidth: '700px', margin: '0 auto 3rem'}}>
+          The high-performance calendar engine for modern apps. 
+          Built for speed, styled for elegance.
         </p>
-        <div style={{marginTop: '2rem'}}>
+        <div>
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro"
-            style={{padding: '1rem 3rem', borderRadius: '50px', fontWeight: 'bold'}}>
-            Get Started (ELI5) 🚀
+            style={{padding: '1.25rem 4rem', borderRadius: '12px', fontWeight: '800', fontSize: '1.1rem'}}>
+            Start Building ⚡
           </Link>
         </div>
       </div>
@@ -30,29 +30,28 @@ function HomepageHeader() {
 }
 
 export default function Home(): JSX.Element {
-  const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="The simplest, fastest calendar engine for Salesforce and Web">
+      title="Documentation"
+      description="Modern calendar infrastructure for Salesforce and the Web">
       <HomepageHeader />
-      <main>
-        <div style={{padding: '4rem 0', textAlign: 'center'}} className="container">
+      <main style={{backgroundColor: '#0a0a0a', padding: '6rem 0'}}>
+        <div className="container">
            <div className="row">
-              <div className="col col--4">
-                <div style={{fontSize: '4rem'}}>🧠</div>
-                <h3>Robot Brain</h3>
-                <p>A smart engine that handles all the hard math, timezones, and repeating events for you.</p>
+              <div className="col col--4" style={{textAlign: 'center', padding: '2rem'}}>
+                <div className="feature-icon-wrapper">🧠</div>
+                <h3 style={{fontSize: '1.5rem', fontWeight: '700'}}>Smart Core</h3>
+                <p style={{color: '#a8a8a8', fontSize: '1.1rem'}}>Framework-agnostic logic handling complex recurrence and timezones with ease.</p>
               </div>
-              <div className="col col--4">
-                <div style={{fontSize: '4rem'}}>🎨</div>
-                <h3>Pretty Face</h3>
-                <p>Beautiful, fast, and responsive UI components that work anywhere.</p>
+              <div className="col col--4" style={{textAlign: 'center', padding: '2rem'}}>
+                <div className="feature-icon-wrapper">🎨</div>
+                <h3 style={{fontSize: '1.5rem', fontWeight: '700'}}>Fluid Interface</h3>
+                <p style={{color: '#a8a8a8', fontSize: '1.1rem'}}>Beautiful Web Components that integrate seamlessly with any frontend stack.</p>
               </div>
-              <div className="col col--4">
-                <div style={{fontSize: '4rem'}}>☁️</div>
-                <h3>Salesforce Ready</h3>
-                <p>Fits perfectly inside Salesforce like a custom-made suit.</p>
+              <div className="col col--4" style={{textAlign: 'center', padding: '2rem'}}>
+                <div className="feature-icon-wrapper">⚡</div>
+                <h3 style={{fontSize: '1.5rem', fontWeight: '700'}}>Extreme Speed</h3>
+                <p style={{color: '#a8a8a8', fontSize: '1.1rem'}}>Optimized spatial indexing designed to handle tens of thousands of events.</p>
               </div>
            </div>
         </div>
