@@ -15,7 +15,20 @@ const config: Config = {
   projectName: 'forcecalendar',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  
+  markdown: {
+    format: 'detect',
+    mermaid: true,
+    onBrokenMarkdownLinks: 'warn',
+    preprocessor: ({filePath, fileContent}) => {
+      return fileContent;
+    },
+    mdx1Compat: {
+      comments: true,
+      admonitions: true,
+      headingIds: true,
+    },
+  },
 
   i18n: {
     defaultLocale: 'en',
@@ -58,11 +71,11 @@ const config: Config = {
           position: 'left',
           label: 'Docs',
         },
-        {
-          to: '/api',
-          label: 'API Reference',
-          position: 'left'
-        },
+        // {
+        //   to: '/api',
+        //   label: 'API Reference',
+        //   position: 'left'
+        // },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
           href: 'https://github.com/forcecalendar/forceCalendar',
@@ -121,18 +134,6 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
-  
-  plugins: [
-    [
-      '@docusaurus/plugin-content-docs',
-      {
-        id: 'api',
-        path: 'docs/api',
-        routeBasePath: 'api',
-        // sidebarPath: require.resolve('./sidebars-api.js'),
-      },
-    ],
-  ],
 };
 
 export default config;
