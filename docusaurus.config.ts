@@ -4,10 +4,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'ForceCalendar',
-  tagline: 'Enterprise Calendar Components for Salesforce and Web',
+  tagline: 'Enterprise Calendar Infrastructure',
   favicon: 'img/favicon.ico',
 
-  // Set the production url of your site here
   url: 'https://docs.forcecalendar.org',
   baseUrl: '/',
 
@@ -16,7 +15,7 @@ const config: Config = {
 
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
-  
+
   markdown: {
     format: 'detect',
     mermaid: true,
@@ -58,27 +57,23 @@ const config: Config = {
 
   themeConfig: {
     colorMode: {
-      defaultMode: 'dark',
-      disableSwitch: true,
-      respectPrefersColorScheme: false,
+      defaultMode: 'light',
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
     },
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
       title: 'ForceCalendar',
-      logo: {
-        alt: 'ForceCalendar Logo',
-        src: 'img/logo.svg',
-      },
       items: [
         {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
-          label: 'Learn (ELI5)',
+          label: 'Documentation',
         },
         {
-          to: '/docs/api',
-          label: 'API (Coming Soon)',
+          to: '/docs/core/calendar',
+          label: 'API Reference',
           position: 'left'
         },
         {to: '/blog', label: 'Blog', position: 'left'},
@@ -90,23 +85,27 @@ const config: Config = {
       ],
     },
     footer: {
-      style: 'dark',
+      style: 'light',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentation',
           items: [
             {
-              label: 'Introduction',
+              label: 'Getting Started',
               to: '/docs/intro',
             },
             {
-              label: 'Installation',
-              to: '/docs/installation',
+              label: 'API Reference',
+              to: '/docs/core/calendar',
+            },
+            {
+              label: 'Architecture',
+              to: '/docs/architecture/overview',
             },
           ],
         },
         {
-          title: 'Community',
+          title: 'Resources',
           items: [
             {
               label: 'GitHub',
@@ -115,6 +114,10 @@ const config: Config = {
             {
               label: 'Discussions',
               href: 'https://github.com/forcecalendar/forceCalendar/discussions',
+            },
+            {
+              label: 'Issues',
+              href: 'https://github.com/forcecalendar/core/issues',
             },
           ],
         },
@@ -131,8 +134,21 @@ const config: Config = {
             },
           ],
         },
+        {
+          title: 'Built With',
+          items: [
+            {
+              label: 'Docusaurus',
+              href: 'https://docusaurus.io',
+            },
+            {
+              label: 'Docusaurus GitHub',
+              href: 'https://github.com/facebook/docusaurus',
+            },
+          ],
+        },
       ],
-      copyright: ` `,
+      copyright: `Copyright © ${new Date().getFullYear()} ForceCalendar. MIT License. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,
