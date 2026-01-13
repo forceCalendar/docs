@@ -1,41 +1,97 @@
-# Welcome to ForceCalendar! 📅
+# Introduction
 
-Hi there! If you want to build a calendar for your website or for Salesforce, you've come to the right place. 
+ForceCalendar is a modern, zero-dependency calendar engine designed for performance and flexibility. It provides everything you need to build calendar applications: event management, recurring events, timezone handling, and ICS import/export.
 
-Think of **ForceCalendar** like a big box of LEGOs. We give you all the pieces you need to build a beautiful calendar that works exactly how you want it to.
+## Why ForceCalendar?
 
----
+| Feature | ForceCalendar | Others |
+|---------|---------------|--------|
+| Dependencies | 0 | moment.js, date-fns, etc. |
+| Bundle Size | ~25KB | 50-200KB |
+| Framework Lock-in | None | Often React/Angular specific |
+| Salesforce Ready | Yes | Requires adaptation |
+| Timezone Support | Built-in IANA | Often requires plugins |
+| Recurrence | Full RFC 5545 | Partial or external lib |
 
-<div class="eli5-card">
-  <h3>🧒 What is it, really?</h3>
-  <p>Imagine you have a <strong>Robot Brain</strong> that knows everything about time, dates, and meetings. Then, you have a <strong>Pretty Suit</strong> that the brain wears so people can see the dates and click on them. That's ForceCalendar!</p>
-</div>
+## The Three Parts
 
-## The Three Main Parts
+ForceCalendar is split into three independent packages:
 
-To make things easy, we split ForceCalendar into three simple parts:
+### @forcecalendar/core
 
-### 1. The Brain (`@forcecalendar/core`)
-This is the smartest part. It doesn't have a "face" (you can't see it), but it knows:
-- How to handle different time zones (so you aren't late for your zoom call in London!).
-- How to handle "Every Wednesday" meetings without you having to type them in every time.
-- How to find events really, really fast.
+The engine. Pure JavaScript with zero dependencies and no DOM manipulation. This is where all the business logic lives:
 
-### 2. The Face (`@forcecalendar/interface`)
-This is the part people actually see and touch. 
-- It has buttons to go to the "Next Month."
-- It has pretty colors.
-- It works on any website, like magic!
+- **Calendar** - Main orchestrator class
+- **Event** - Event data model with validation
+- **EventStore** - Indexed event storage with O(1) lookups
+- **StateManager** - Application state with undo/redo
+- **TimezoneManager** - DST-aware timezone conversions
+- **RecurrenceEngine** - RFC 5545 RRULE expansion
+- **ICSParser** - iCalendar import/export
+- **EventSearch** - Full-text search with fuzzy matching
 
-### 3. The Salesforce Suit (`salesforce/`)
-If you use Salesforce, we have a special version that fits perfectly inside it. It's like putting a custom-tailored suit on our calendar so it can live happily in the Salesforce world.
+### @forcecalendar/interface
 
----
+The UI. Web Components that work in any framework:
 
-## Why should I use it?
+- `<force-calendar>` - Full calendar component
+- Month, week, day, and list views
+- CSS custom properties for theming
+- Accessible keyboard navigation
 
-- **It's super fast**: Even if you have 10,000 events, it won't lag.
-- **It's helpful**: It warns you if you try to book two things at the same time.
-- **It's friendly**: It works with React, Vue, Salesforce, or just plain old HTML.
+### salesforce/
 
-Ready to start building? Let's [install it!](installation)
+The Salesforce integration:
+
+- Lightning Web Component wrappers
+- Locker Service compatible
+- Apex controller for server-side operations
+- SLDS styling integration
+
+## Quick Example
+
+```javascript
+import { Calendar } from '@forcecalendar/core';
+
+// Create a calendar instance
+const calendar = new Calendar({
+  timeZone: 'America/New_York',
+  weekStartsOn: 1 // Monday
+});
+
+// Add an event
+calendar.addEvent({
+  id: 'meeting-1',
+  title: 'Weekly Standup',
+  start: new Date('2024-01-15T09:00:00'),
+  end: new Date('2024-01-15T09:30:00'),
+  recurring: true,
+  recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
+});
+
+// Get events for today
+const todayEvents = calendar.getEventsForDate(new Date());
+
+// Subscribe to changes
+calendar.on('eventAdd', ({ event }) => {
+  console.log('New event:', event.title);
+});
+```
+
+## Design Principles
+
+1. **Zero Dependencies** - We use native JavaScript APIs (Date, Intl, Map, Set). No external libraries.
+
+2. **Framework Agnostic** - Core has no DOM code. Use it with React, Vue, Angular, Svelte, or vanilla JS.
+
+3. **Separation of Concerns** - Business logic in core, UI in interface, platform-specific in salesforce.
+
+4. **Performance First** - Spatial indexing, lazy loading, caching, and efficient algorithms throughout.
+
+5. **Standards Compliant** - RFC 5545 for recurrence rules, IANA for timezones, iCalendar for import/export.
+
+## Next Steps
+
+- [Installation](./installation) - Get started with npm
+- [Architecture Overview](./architecture/overview) - Understand how it all fits together
+- [Calendar API](./core/calendar) - Main entry point documentation
