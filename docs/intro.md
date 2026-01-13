@@ -13,22 +13,26 @@ ForceCalendar is a modern, zero-dependency calendar engine designed for performa
 | Timezone Support | Built-in IANA | Often requires plugins |
 | Recurrence | Full RFC 5545 | Partial or external lib |
 
-## The Three Parts
+---
 
-ForceCalendar is split into three independent packages:
+## Architecture
+
+ForceCalendar is split into three independent layers:
 
 ### @forcecalendar/core
 
 The engine. Pure JavaScript with zero dependencies and no DOM manipulation. This is where all the business logic lives:
 
-- **Calendar** - Main orchestrator class
-- **Event** - Event data model with validation
-- **EventStore** - Indexed event storage with O(1) lookups
-- **StateManager** - Application state with undo/redo
-- **TimezoneManager** - DST-aware timezone conversions
-- **RecurrenceEngine** - RFC 5545 RRULE expansion
-- **ICSParser** - iCalendar import/export
-- **EventSearch** - Full-text search with fuzzy matching
+| Class | Purpose |
+|-------|---------|
+| `Calendar` | Main orchestrator class |
+| `Event` | Event data model with validation |
+| `EventStore` | Indexed event storage with O(1) lookups |
+| `StateManager` | Application state with undo/redo |
+| `TimezoneManager` | DST-aware timezone conversions |
+| `RecurrenceEngine` | RFC 5545 RRULE expansion |
+| `ICSParser` | iCalendar import/export |
+| `EventSearch` | Full-text search with fuzzy matching |
 
 ### @forcecalendar/interface
 
@@ -48,7 +52,117 @@ The Salesforce integration:
 - Apex controller for server-side operations
 - SLDS styling integration
 
-## Quick Example
+---
+
+## Core Capabilities
+
+### RFC 5545 Recurrence Rules
+
+Full RRULE support. Daily, weekly, monthly, yearly patterns with complex rules like "2nd Tuesday of every month."
+
+```javascript
+calendar.addEvent({
+  title: 'Team Standup',
+  start: new Date('2024-01-15T09:00:00'),
+  recurring: true,
+  recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
+});
+```
+
+### IANA Timezone Handling
+
+DST-aware conversions. Convert between any IANA timezone. Events store both local and UTC times.
+
+```javascript
+const calendar = new Calendar({
+  timeZone: 'America/New_York'
+});
+
+// Convert event to different timezone
+const tokyoTime = calendar.timezoneManager.convert(
+  event.start,
+  'America/New_York',
+  'Asia/Tokyo'
+);
+```
+
+### ICS Import/Export
+
+iCalendar format support. Import from Google Calendar, Outlook. Export for sharing anywhere.
+
+```javascript
+import { ICSHandler } from '@forcecalendar/core';
+
+// Import from file
+const events = await ICSHandler.importFromFile(file);
+
+// Export to file
+ICSHandler.downloadICS(calendar.getAllEvents(), 'my-calendar.ics');
+```
+
+### O(1) Fast Lookups
+
+Spatial indexing by date. Events indexed by day, month, category. Handle 10,000+ events smoothly.
+
+### Undo/Redo State History
+
+Built-in undo/redo. Navigate up to 50 state changes. Deep cloning prevents reference bugs.
+
+```javascript
+calendar.addEvent({ ... });
+calendar.undo();  // Event removed
+calendar.redo();  // Event restored
+```
+
+### Zero Dependencies
+
+No moment.js. No date-fns. Pure JavaScript using native Date and Intl APIs. Tiny bundle size.
+
+---
+
+## How Data Flows
+
+Unidirectional data flow. Events flow down, changes bubble up.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Your Application                     │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                      Calendar                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │ EventStore   │  │ StateManager │  │ Timezone     │  │
+│  │              │  │              │  │ Manager      │  │
+│  │ - events Map │  │ - state      │  │              │  │
+│  │ - indices    │  │ - history    │  │ - offsets    │  │
+│  │ - listeners  │  │ - listeners  │  │ - DST rules  │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                          │
+          ┌───────────────┼───────────────┐
+          ▼               ▼               ▼
+    ┌──────────┐   ┌──────────────┐   ┌──────────┐
+    │ Event    │   │ Recurrence   │   │ ICSParser│
+    │          │   │ Engine       │   │          │
+    │ - start  │   │ - expand     │   │ - parse  │
+    │ - end    │   │ - RRULE      │   │ - export │
+    │ - tz     │   │ - exceptions │   │          │
+    └──────────┘   └──────────────┘   └──────────┘
+```
+
+---
+
+## Quick Start
+
+### Install
+
+```bash
+npm install @forcecalendar/core
+```
+
+### Usage
 
 ```javascript
 import { Calendar } from '@forcecalendar/core';
@@ -78,6 +192,8 @@ calendar.on('eventAdd', ({ event }) => {
 });
 ```
 
+---
+
 ## Design Principles
 
 1. **Zero Dependencies** - We use native JavaScript APIs (Date, Intl, Map, Set). No external libraries.
@@ -90,8 +206,10 @@ calendar.on('eventAdd', ({ event }) => {
 
 5. **Standards Compliant** - RFC 5545 for recurrence rules, IANA for timezones, iCalendar for import/export.
 
+---
+
 ## Next Steps
 
 - [Installation](./installation) - Get started with npm
-- [Architecture Overview](./architecture/overview) - Understand how it all fits together
+- [Architecture Overview](./architecture/overview) - Deep dive into how it all fits together
 - [Calendar API](./core/calendar) - Main entry point documentation

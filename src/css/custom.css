@@ -44,9 +44,6 @@
   --ifm-navbar-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --ifm-navbar-height: 64px;
 
-  /* Footer */
-  --ifm-footer-background-color: #f8f9fa;
-
   /* Code */
   --ifm-code-font-size: 90%;
   --ifm-code-background: #f4f4f5;
@@ -84,7 +81,6 @@
   --fc-border-color-dark: #3d4451;
 
   --ifm-navbar-background-color: #0f1117;
-  --ifm-footer-background-color: #0a0c10;
 
   --ifm-code-background: #1a1d24;
 
@@ -273,49 +269,6 @@ code {
   background: var(--ifm-background-surface-color);
   border-color: var(--ifm-color-primary);
   color: var(--ifm-color-primary);
-}
-
-/* ========================================
-   Footer
-   ======================================== */
-.footer {
-  border-top: 1px solid var(--fc-border-color);
-}
-
-.footer__title {
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ifm-font-color-secondary);
-}
-
-.footer__link-item {
-  font-size: 0.9375rem;
-}
-
-/* ========================================
-   Homepage Hero
-   ======================================== */
-.hero {
-  padding: 4rem 2rem;
-  background: var(--ifm-background-color);
-  border-bottom: 1px solid var(--fc-border-color);
-}
-
-.hero__title {
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--ifm-font-color-base);
-  margin-bottom: 1rem;
-}
-
-.hero__subtitle {
-  font-size: 1.25rem;
-  color: var(--ifm-font-color-secondary);
-  font-weight: 400;
-  max-width: 600px;
 }
 
 /* ========================================
