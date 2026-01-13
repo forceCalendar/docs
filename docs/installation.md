@@ -1,18 +1,20 @@
 # Installation
 
-Ready to give your app a brain and a face? Let's get ForceCalendar installed!
+Get ForceCalendar installed in your project.
 
 ---
 
-## 🧠 Step 1: Install the Brain
-If you want to handle the logic yourself, start here.
+## Step 1: Install Core
+
+The core package provides all the calendar logic with zero dependencies.
 
 ```bash
 npm install @forcecalendar/core
 ```
 
-## 🎨 Step 2: Install the Face
-If you want the pretty calendar component, grab the interface.
+## Step 2: Install Interface (Optional)
+
+If you want the pre-built calendar UI components:
 
 ```bash
 npm install @forcecalendar/interface
@@ -20,14 +22,15 @@ npm install @forcecalendar/interface
 
 ---
 
-## ☁️ Step 3: Using with Salesforce
-ForceCalendar is a best friend to Salesforce. To get it into your Org:
+## Using with Salesforce
 
-1. **Clone the repo**:
+To deploy ForceCalendar to your Salesforce org:
+
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/forcecalendar/salesforce.git
    ```
-2. **Build the magic**:
+2. **Build the package**:
    ```bash
    npm run build
    ```
@@ -38,22 +41,20 @@ ForceCalendar is a best friend to Salesforce. To get it into your Org:
 
 ---
 
-## 🚀 Quick Start Example
+## Quick Start Example
 
-Want to see it in action right now? Paste this into your HTML file:
+Minimal HTML example using the interface package:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <title>My First Calendar</title>
-  <!-- Load the Face -->
   <script type="module" src="https://unpkg.com/@forcecalendar/interface"></script>
 </head>
 <body>
-  <!-- Use the Sticker -->
-  <force-calendar 
-    view="month" 
+  <force-calendar
+    view="month"
     timezone="UTC"
     style="height: 800px;">
   </force-calendar>
@@ -61,7 +62,6 @@ Want to see it in action right now? Paste this into your HTML file:
 </html>
 ```
 
-<div class="eli5-card">
-  <h3>💡 Pro Tip</h3>
-  <p>Remember to give your <code>&lt;force-calendar&gt;</code> a height! If you don't, it will be invisible because it doesn't know how tall it should be.</p>
-</div>
+:::tip
+Remember to give your `<force-calendar>` element a height. Without explicit dimensions, the component will not be visible.
+:::

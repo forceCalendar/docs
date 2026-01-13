@@ -1,48 +1,127 @@
-# The Face (Web Components)
+# Web Components
 
-If the **Core** is the brain, then the **Web Component** is the face. It's the part that looks pretty and has buttons you can click!
+The `@forcecalendar/interface` package provides Web Components that work in any framework or vanilla HTML.
 
 ---
 
-<div class="eli5-card">
-  <h3>🌟 The Magical Sticker</h3>
-  <p>Think of our Web Component like a <strong>magical sticker</strong>. You can peel it off and stick it on ANY website—whether it's built with React, Vue, or just plain HTML. Once you stick it there, a full, working calendar appears!</p>
-</div>
-
-## How to use the Sticker
-
-### 1. Grab the library
-First, you need to tell your website where the sticker comes from:
+## Installation
 
 ```bash
 npm install @forcecalendar/interface
 ```
 
-### 2. Stick it on your page
-You just use a special HTML tag called `<force-calendar>`. It's like a normal `<div>` or `<img>` tag, but it's a whole calendar!
+Or use via CDN:
 
 ```html
-<force-calendar 
-  view="month" 
-  timezone="America/New_York">
+<script type="module" src="https://unpkg.com/@forcecalendar/interface"></script>
+```
+
+---
+
+## Basic Usage
+
+Add the `<force-calendar>` element to your HTML:
+
+```html
+<force-calendar
+  view="month"
+  timezone="America/New_York"
+  style="height: 600px;">
 </force-calendar>
 ```
 
-## How to change its look
+---
 
-You can change how the calendar looks using **CSS Variables**. It's like changing the "theme" of the sticker.
+## Attributes
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `view` | `string` | `month` | View mode: `month`, `week`, `day`, `list` |
+| `timezone` | `string` | Browser TZ | IANA timezone identifier |
+| `week-starts-on` | `number` | `0` | First day of week (0=Sunday, 1=Monday) |
+| `readonly` | `boolean` | `false` | Disable event editing |
+
+---
+
+## Styling with CSS Variables
+
+Customize the appearance using CSS custom properties:
 
 ```css
 force-calendar {
-  /* Change the main color to a nice blue */
   --fc-primary-color: #0070d2;
-  
-  /* Make the corners rounded */
-  --fc-border-radius: 10px;
+  --fc-border-radius: 8px;
+  --fc-font-family: 'Inter', sans-serif;
+  --fc-header-bg: #f5f5f5;
+  --fc-event-bg: #0070d2;
+  --fc-event-text: #ffffff;
 }
 ```
 
-## Why Web Components are cool
-- **They are lonely (in a good way!)**: They don't let the rest of your website's code mess with their internal styles.
-- **They are universal**: They don't care if you use React or Vue. They just work!
-- **They are simple**: One tag, and you're done!
+---
+
+## Framework Integration
+
+### React
+
+```jsx
+import '@forcecalendar/interface';
+
+function App() {
+  return (
+    <force-calendar
+      view="month"
+      timezone="America/New_York"
+      style={{ height: '600px' }}
+    />
+  );
+}
+```
+
+### Vue
+
+```vue
+<template>
+  <force-calendar
+    view="month"
+    timezone="America/New_York"
+    style="height: 600px"
+  />
+</template>
+
+<script>
+import '@forcecalendar/interface';
+export default { name: 'App' };
+</script>
+```
+
+### Angular
+
+```typescript
+// In your module
+import '@forcecalendar/interface';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
+
+@NgModule({
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})
+export class AppModule {}
+```
+
+```html
+<!-- In your template -->
+<force-calendar
+  view="month"
+  timezone="America/New_York"
+  style="height: 600px">
+</force-calendar>
+```
+
+---
+
+## Why Web Components
+
+- **Framework agnostic** - Works with React, Vue, Angular, Svelte, or vanilla HTML
+- **Encapsulated styles** - Shadow DOM prevents style conflicts
+- **Native browser support** - No framework runtime required
+- **Simple API** - Just HTML attributes and CSS variables
