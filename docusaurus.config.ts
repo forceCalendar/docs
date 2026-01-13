@@ -42,12 +42,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/forcecalendar/forceCalendar/tree/main/docs/',
         },
-        blog: {
-          showReadingTime: true,
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -76,7 +71,6 @@ const config: Config = {
           label: 'API Reference',
           position: 'left'
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
         {
           href: 'https://github.com/forcecalendar/forceCalendar',
           label: 'GitHub',
