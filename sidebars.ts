@@ -5,6 +5,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Getting Started',
+      collapsed: false,
       items: [
         'intro',
         'installation',
@@ -12,9 +13,26 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Core Concepts',
+      label: 'Architecture',
+      collapsed: false,
       items: [
-        'core/overview',
+        'architecture/overview',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Core API Reference',
+      collapsed: false,
+      items: [
+        'core/calendar',
+        'core/event',
+        'core/event-store',
+        'core/state-manager',
+        'core/timezone',
+        'core/recurrence',
+        'core/date-utils',
+        'core/ics',
+        'core/search',
       ],
     },
     {
@@ -27,7 +45,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Advanced Features',
+      label: 'Advanced',
       items: [
         'advanced/performance',
       ],
