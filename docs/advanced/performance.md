@@ -1,73 +1,66 @@
+---
+sidebar_position: 1
+title: Performance
+sidebar_label: Performance
+description: Performance optimization with EnhancedCalendar, batch operations, memory management, and LRU caching.
+---
+
 # Performance
 
-ForceCalendar is designed to handle large datasets efficiently. This page explains the optimization techniques used throughout the library.
+ForceCalendar includes several built-in performance optimizations for handling large event sets.
 
----
+## EnhancedCalendar
 
-## Spatial Indexing
-
-Events are indexed by date using a spatial indexing strategy. When querying events for a specific date range, only the relevant index partitions are searched.
+`EnhancedCalendar` extends `Calendar` with integrated search, conflict detection, and performance optimization:
 
 ```javascript
-// Events are indexed by day key (YYYY-MM-DD)
-// Querying January only searches the January partition
-const events = calendar.getEventsForMonth(2024, 0); // O(1) lookup
+import { EnhancedCalendar } from '@forcecalendar/core';
+
+const calendar = new EnhancedCalendar({
+  view: 'month',
+  timeZone: 'America/New_York'
+});
 ```
 
-**Benefits:**
-- O(1) event lookups by date
-- Scales to 10,000+ events without performance degradation
-- Memory-efficient partitioning
+## PerformanceOptimizer
 
----
-
-## Lazy Recurrence Expansion
-
-Recurring events are stored as rules, not as individual instances. The RecurrenceEngine only calculates occurrences for the requested date range.
+Batches DOM-triggering operations and schedules renders:
 
 ```javascript
-// Rule stored once
-const event = {
-  title: 'Daily Standup',
-  recurrenceRule: 'FREQ=DAILY'
-};
-
-// Occurrences calculated on-demand for visible range only
-const visible = engine.expand(event, viewStart, viewEnd);
+import { PerformanceOptimizer } from '@forcecalendar/core';
 ```
 
-**Benefits:**
-- Infinite recurrence patterns use constant storage
-- No upfront calculation overhead
-- Only compute what's needed for the current view
+Features:
+- Batch event additions to minimize re-renders
+- Debounced render scheduling
+- Operation coalescing
 
----
+## AdaptiveMemoryManager
 
-## Virtual Rendering
+Monitors memory pressure and evicts caches when needed:
 
-The interface package uses virtual rendering to only draw visible events. Off-screen elements are not rendered, reducing DOM node count and memory usage.
+- Tracks cache sizes across EventStore, search indexes, and timezone caches
+- Evicts least-recently-used entries when memory thresholds are exceeded
+- Adaptive thresholds based on available memory
 
-**Benefits:**
-- Smooth scrolling with thousands of events
-- Reduced memory footprint
-- Consistent frame rates
+## LRUCache
 
----
+Generic least-recently-used cache used internally:
 
-## Benchmark Results
+```javascript
+import { LRUCache } from '@forcecalendar/core';
 
-| Scenario | Events | Load Time | Scroll FPS |
-|----------|--------|-----------|------------|
-| Light usage | 100 | <10ms | 60 |
-| Normal usage | 1,000 | <20ms | 60 |
-| Heavy usage | 10,000 | <50ms | 60 |
-| Stress test | 50,000 | <200ms | 55+ |
+const cache = new LRUCache(100); // Max 100 entries
+cache.set('key', value);
+cache.get('key');
+cache.has('key');
+cache.delete('key');
+cache.clear();
+```
 
----
+## Tips
 
-## Best Practices
-
-1. **Use date range queries** - Always specify a date range when fetching events
-2. **Batch operations** - Use `batchAdd()` for importing multiple events
-3. **Rebuild index after bulk imports** - Call `search.rebuildIndex()` after large imports
-4. **Limit recurrence expansion** - Set reasonable end dates for recurring events
+- **Batch event loading**: Use `calendar.setEvents(events)` instead of calling `addEvent` in a loop. `setEvents` triggers a single store update.
+- **Limit date ranges**: Query only the visible date range rather than loading all events at once. The Salesforce integration does this automatically.
+- **Use Web Workers for search**: `SearchWorkerManager` offloads search indexing and querying to a Web Worker, keeping the main thread responsive.
+- **Leverage view data caching**: `getViewData()` computes view data on demand. Cache the result if you call it multiple times per render cycle.

@@ -10,11 +10,10 @@ const config: Config = {
   url: 'https://docs.forcecalendar.org',
   baseUrl: '/',
 
-  organizationName: 'forcecalendar',
-  projectName: 'forcecalendar',
+  organizationName: 'forceCalendar',
+  projectName: 'docs',
 
   onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
 
   markdown: {
     format: 'detect',
@@ -26,6 +25,9 @@ const config: Config = {
       comments: true,
       admonitions: true,
       headingIds: true,
+    },
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
     },
   },
 
@@ -40,7 +42,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/forcecalendar/forceCalendar/tree/main/docs/',
+          editUrl: 'https://github.com/forceCalendar/docs/tree/main/',
         },
         blog: false,
         theme: {
@@ -56,7 +58,6 @@ const config: Config = {
       disableSwitch: false,
       respectPrefersColorScheme: true,
     },
-    image: 'img/docusaurus-social-card.jpg',
     navbar: {
       title: 'ForceCalendar',
       items: [
@@ -64,23 +65,55 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
-          label: 'Documentation',
+          label: 'Docs',
         },
         {
-          to: '/docs/core/calendar',
+          to: '/docs/api',
           label: 'API Reference',
           position: 'left'
         },
         {
-          href: 'https://github.com/forcecalendar/forceCalendar',
+          href: 'https://github.com/forceCalendar',
           label: 'GitHub',
           position: 'right',
         },
       ],
     },
+    footer: {
+      style: 'light',
+      links: [
+        {
+          title: 'Docs',
+          items: [
+            { label: 'Getting Started', to: '/docs/intro' },
+            { label: 'Core API', to: '/docs/core/calendar' },
+            { label: 'Interface', to: '/docs/interface/forcecal-main' },
+            { label: 'Salesforce', to: '/docs/salesforce/setup' },
+          ],
+        },
+        {
+          title: 'GitHub',
+          items: [
+            { label: 'Core', href: 'https://github.com/forceCalendar/core' },
+            { label: 'Interface', href: 'https://github.com/forceCalendar/interface' },
+            { label: 'Website', href: 'https://github.com/forceCalendar/www' },
+          ],
+        },
+        {
+          title: 'Resources',
+          items: [
+            { label: 'Examples', to: '/docs/guides/examples' },
+            { label: 'Theming', to: '/docs/guides/theming' },
+            { label: 'Troubleshooting', to: '/docs/troubleshooting' },
+          ],
+        },
+      ],
+      copyright: `Copyright ${new Date().getFullYear()} ForceCalendar. MIT License.`,
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['bash', 'apex'],
     },
   } satisfies Preset.ThemeConfig,
 };

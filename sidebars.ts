@@ -9,21 +9,15 @@ const sidebars: SidebarsConfig = {
       items: [
         'intro',
         'installation',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Architecture',
-      collapsed: false,
-      items: [
         'architecture/overview',
       ],
     },
     {
       type: 'category',
-      label: 'Core API Reference',
+      label: 'Core API',
       collapsed: false,
       items: [
+        'core/overview',
         'core/calendar',
         'core/event',
         'core/event-store',
@@ -37,10 +31,31 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Integration Guides',
+      label: 'Interface Components',
+      collapsed: false,
       items: [
-        'integration/web-components',
-        'integration/salesforce',
+        'interface/forcecal-main',
+        'interface/event-form',
+        'interface/base-component',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Salesforce',
+      collapsed: false,
+      items: [
+        'salesforce/setup',
+        'salesforce/apex-controller',
+        'salesforce/lwc-component',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Guides',
+      collapsed: false,
+      items: [
+        'guides/theming',
+        'guides/examples',
       ],
     },
     {
@@ -56,6 +71,11 @@ const sidebars: SidebarsConfig = {
       items: [
         'troubleshooting/index',
       ],
+    },
+    {
+      type: 'doc',
+      id: 'api/index',
+      label: 'API Reference',
     },
   ],
 };
