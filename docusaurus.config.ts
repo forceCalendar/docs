@@ -73,6 +73,21 @@ const config: Config = {
           position: 'left'
         },
         {
+          href: 'https://forcecalendar.org/playground',
+          label: 'Playground',
+          position: 'left',
+        },
+        {
+          href: 'https://benchmark.forcecalendar.org',
+          label: 'Benchmark',
+          position: 'left',
+        },
+        {
+          href: 'https://audit.forcecalendar.org',
+          label: 'Audit',
+          position: 'left',
+        },
+        {
           href: 'https://github.com/forceCalendar',
           label: 'GitHub',
           position: 'right',
@@ -89,6 +104,15 @@ const config: Config = {
             { label: 'Core API', to: '/docs/core/calendar' },
             { label: 'Interface', to: '/docs/interface/forcecal-main' },
             { label: 'Salesforce', to: '/docs/salesforce/setup' },
+          ],
+        },
+        {
+          title: 'Properties',
+          items: [
+            { label: 'Documentation', to: '/' },
+            { label: 'Benchmark', href: 'https://benchmark.forcecalendar.org' },
+            { label: 'Audit', href: 'https://audit.forcecalendar.org' },
+            { label: 'Playground', href: 'https://forcecalendar.org/playground' },
           ],
         },
         {
