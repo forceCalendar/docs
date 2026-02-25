@@ -9,21 +9,15 @@ const sidebars: SidebarsConfig = {
       items: [
         'intro',
         'installation',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Architecture',
-      collapsed: false,
-      items: [
         'architecture/overview',
       ],
     },
     {
       type: 'category',
-      label: 'Core API Reference',
+      label: 'Core API',
       collapsed: false,
       items: [
+        'core/overview',
         'core/calendar',
         'core/event',
         'core/event-store',
@@ -47,7 +41,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Salesforce Integration',
+      label: 'Salesforce',
       collapsed: false,
       items: [
         'salesforce/setup',
@@ -77,6 +71,11 @@ const sidebars: SidebarsConfig = {
       items: [
         'troubleshooting/index',
       ],
+    },
+    {
+      type: 'doc',
+      id: 'api/index',
+      label: 'API Reference',
     },
   ],
 };

@@ -1,6 +1,8 @@
 ---
 sidebar_position: 5
 title: Timezone
+sidebar_label: Timezone
+description: IANA timezone conversion, formatting, and per-event timezone support.
 ---
 
 # TimezoneManager

@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 title: Setup & Deploy
+sidebar_label: Setup & Deploy
+description: Build, deploy, and configure ForceCalendar in Salesforce Lightning pages.
 ---
 
 # Salesforce Setup & Deploy

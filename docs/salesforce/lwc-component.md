@@ -1,6 +1,8 @@
 ---
 sidebar_position: 3
 title: LWC Component
+sidebar_label: LWC Component
+description: Lightning Web Component wrapper for forcecal-main with Apex data binding and event CRUD.
 ---
 
 # LWC Component

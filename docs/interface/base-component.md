@@ -1,6 +1,8 @@
 ---
 sidebar_position: 3
 title: BaseComponent
+sidebar_label: BaseComponent
+description: Base class for ForceCalendar Web Components with Shadow DOM, lifecycle, and event handling.
 ---
 
 # BaseComponent

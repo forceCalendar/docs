@@ -1,6 +1,8 @@
 ---
 sidebar_position: 9
 title: Search
+sidebar_label: Search
+description: Full-text search with fuzzy matching, field-level search, and Web Worker offloading.
 ---
 
 # EventSearch

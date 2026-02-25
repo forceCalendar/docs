@@ -1,6 +1,8 @@
 ---
 sidebar_position: 6
 title: Recurrence
+sidebar_label: Recurrence
+description: RFC 5545 recurrence rule expansion with DAILY, WEEKLY, MONTHLY, YEARLY frequencies.
 ---
 
 # Recurrence

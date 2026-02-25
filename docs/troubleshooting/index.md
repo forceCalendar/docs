@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 title: Troubleshooting
+sidebar_label: Troubleshooting
+description: Solutions for common issues with rendering, events, Salesforce deployment, theming, and timezones.
 ---
 
 # Troubleshooting

@@ -1,6 +1,8 @@
 ---
 sidebar_position: 7
 title: DateUtils
+sidebar_label: DateUtils
+description: Date calculation and locale-aware formatting utilities.
 ---
 
 # DateUtils

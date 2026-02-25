@@ -1,6 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 3
 title: Architecture
+sidebar_label: Architecture
+description: Layered architecture overview of ForceCalendar's core, interface, and Salesforce integration.
 ---
 
 # Architecture

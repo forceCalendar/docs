@@ -1,6 +1,8 @@
 ---
 sidebar_position: 2
 title: Event
+sidebar_label: Event
+description: Event model with normalization, validation, recurrence rules, attendees, and metadata.
 ---
 
 # Event

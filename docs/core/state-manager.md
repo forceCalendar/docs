@@ -1,6 +1,8 @@
 ---
 sidebar_position: 4
 title: StateManager
+sidebar_label: StateManager
+description: Central state management with immutable updates, subscriptions, and undo/redo history.
 ---
 
 # StateManager
@@ -78,7 +80,7 @@ state.setState(current => ({
 ```javascript
 // Global subscription (fires on any change)
 const unsub = state.subscribe((newState, oldState) => {
-  if (newState.view \!== oldState.view) {
+  if (newState.view !== oldState.view) {
     console.log('View changed to', newState.view);
   }
 });

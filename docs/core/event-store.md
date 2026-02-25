@@ -1,6 +1,8 @@
 ---
 sidebar_position: 3
 title: EventStore
+sidebar_label: EventStore
+description: Indexed event storage with range queries, overlap detection, and change subscriptions.
 ---
 
 # EventStore

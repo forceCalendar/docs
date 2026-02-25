@@ -1,6 +1,8 @@
 ---
 sidebar_position: 8
 title: ICS Import/Export
+sidebar_label: ICS Import/Export
+description: Import and export calendar data in iCalendar (.ics) format.
 ---
 
 # ICS Import/Export

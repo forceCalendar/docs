@@ -1,6 +1,8 @@
 ---
 sidebar_position: 2
-title: <forcecal-event-form>
+title: "<forcecal-event-form>"
+sidebar_label: "<forcecal-event-form>"
+description: Modal dialog Web Component for creating calendar events with validation and color selection.
 ---
 
 # `<forcecal-event-form>`

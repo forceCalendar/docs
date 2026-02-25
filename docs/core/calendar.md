@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 title: Calendar
+sidebar_label: Calendar
+description: Main Calendar class API -- constructor, navigation, event CRUD, views, timezones, plugins, and events.
 ---
 
 # Calendar

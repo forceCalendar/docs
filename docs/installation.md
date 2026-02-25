@@ -1,6 +1,8 @@
 ---
 sidebar_position: 2
 title: Installation
+sidebar_label: Installation
+description: Install @forcecalendar/core and @forcecalendar/interface via npm, CDN, or for Salesforce.
 ---
 
 # Installation

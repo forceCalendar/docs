@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 title: Theming & CSS Tokens
+sidebar_label: Theming
+description: Customize ForceCalendar with 50+ CSS custom properties for colors, typography, spacing, and more.
 ---
 
 # Theming & CSS Tokens

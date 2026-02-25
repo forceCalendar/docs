@@ -1,6 +1,8 @@
 ---
 sidebar_position: 2
 title: Apex Controller
+sidebar_label: Apex Controller
+description: ForceCalendarController Apex methods for CRUD operations with CRUD/FLS enforcement.
 ---
 
 # Apex Controller

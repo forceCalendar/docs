@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 title: Performance
+sidebar_label: Performance
+description: Performance optimization with EnhancedCalendar, batch operations, memory management, and LRU caching.
 ---
 
 # Performance

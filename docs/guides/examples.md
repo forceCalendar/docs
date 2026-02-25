@@ -1,6 +1,8 @@
 ---
 sidebar_position: 2
 title: Examples
+sidebar_label: Examples
+description: Copy-paste examples for HTML, React, Vue, ICS import, theming, timezones, and conflict detection.
 ---
 
 # Examples
@@ -8,7 +10,7 @@ title: Examples
 ## Basic Calendar (HTML)
 
 ```html
-<\!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <title>ForceCalendar Demo</title>
@@ -94,7 +96,7 @@ function CalendarWidget({ events, onEventAdd }) {
 
   useEffect(() => {
     const cal = ref.current;
-    if (\!cal) return;
+    if (!cal) return;
 
     events.forEach(evt => cal.addEvent(evt));
 

@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
-title: <forcecal-main>
+title: "<forcecal-main>"
+sidebar_label: "<forcecal-main>"
+description: Primary calendar Web Component with month/week/day views, navigation, event CRUD, and CSS token theming.
 ---
 
 # `<forcecal-main>`

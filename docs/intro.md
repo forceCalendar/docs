@@ -1,7 +1,9 @@
 ---
 sidebar_position: 1
 title: Introduction
+sidebar_label: Introduction
 slug: /intro
+description: Enterprise calendar infrastructure for Salesforce and the web. Zero dependencies. MIT licensed.
 ---
 
 # ForceCalendar
