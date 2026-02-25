@@ -37,10 +37,31 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Integration Guides',
+      label: 'Interface Components',
+      collapsed: false,
       items: [
-        'integration/web-components',
-        'integration/salesforce',
+        'interface/forcecal-main',
+        'interface/event-form',
+        'interface/base-component',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Salesforce Integration',
+      collapsed: false,
+      items: [
+        'salesforce/setup',
+        'salesforce/apex-controller',
+        'salesforce/lwc-component',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Guides',
+      collapsed: false,
+      items: [
+        'guides/theming',
+        'guides/examples',
       ],
     },
     {

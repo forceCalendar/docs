@@ -1,67 +1,78 @@
+---
+sidebar_position: 2
+title: Installation
+---
+
 # Installation
 
-Get ForceCalendar installed in your project.
-
----
-
-## Step 1: Install Core
-
-The core package provides all the calendar logic with zero dependencies.
+## npm
 
 ```bash
+# Core only (headless engine)
 npm install @forcecalendar/core
+
+# Core + Interface (Web Components)
+npm install @forcecalendar/core @forcecalendar/interface
 ```
 
-## Step 2: Install Interface (Optional)
+`@forcecalendar/interface` declares `@forcecalendar/core` as a peer dependency (`>=2.0.0`). Install both packages explicitly.
 
-If you want the pre-built calendar UI components:
+## CDN
 
-```bash
-npm install @forcecalendar/interface
-```
-
----
-
-## Using with Salesforce
-
-To deploy ForceCalendar to your Salesforce org:
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/forcecalendar/salesforce.git
-   ```
-2. **Build the package**:
-   ```bash
-   npm run build
-   ```
-3. **Deploy to Salesforce**:
-   ```bash
-   sf project deploy start
-   ```
-
----
-
-## Quick Start Example
-
-Minimal HTML example using the interface package:
+### UMD (global)
 
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My First Calendar</title>
-  <script type="module" src="https://unpkg.com/@forcecalendar/interface"></script>
-</head>
-<body>
-  <force-calendar
-    view="month"
-    timezone="UTC"
-    style="height: 800px;">
-  </force-calendar>
-</body>
-</html>
+<script src="https://unpkg.com/@forcecalendar/interface/dist/force-calendar-interface.umd.js"></script>
 ```
 
-:::tip
-Remember to give your `<force-calendar>` element a height. Without explicit dimensions, the component will not be visible.
-:::
+The UMD bundle registers the `<forcecal-main>` and `<forcecal-event-form>` custom elements globally. No import statement needed.
+
+### ESM
+
+```html
+<script type="module">
+  import { ForceCalendar } from 'https://unpkg.com/@forcecalendar/interface/dist/force-calendar-interface.esm.js';
+</script>
+```
+
+## ES Module Imports
+
+Core uses subpath exports for tree-shaking:
+
+```javascript
+// Full import
+import { Calendar, Event, EventStore, StateManager } from '@forcecalendar/core';
+
+// Subpath imports (smaller bundles)
+import { Calendar } from '@forcecalendar/core/calendar';
+import { Event } from '@forcecalendar/core/events';
+import { StateManager } from '@forcecalendar/core/state';
+import { EventSearch } from '@forcecalendar/core/search';
+import { ICSHandler } from '@forcecalendar/core/ics';
+```
+
+Interface exports from a single entry point:
+
+```javascript
+import {
+  ForceCalendar,
+  BaseComponent,
+  StateManager,
+  EventBus,
+  MonthViewRenderer,
+  WeekViewRenderer,
+  DayViewRenderer,
+  DateUtils,
+  DOMUtils,
+  StyleUtils
+} from '@forcecalendar/interface';
+```
+
+## Salesforce
+
+Salesforce deployment uses a build step that bundles Core + Interface into an IIFE static resource. See the [Salesforce Setup Guide](/docs/salesforce/setup).
+
+## Requirements
+
+- Node.js 20+
+- Modern browser with Custom Elements v1 support (all current browsers)

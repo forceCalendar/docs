@@ -1,728 +1,318 @@
+---
+sidebar_position: 1
+title: Calendar
+---
+
 # Calendar
 
-The `Calendar` class is the main entry point and orchestrator for ForceCalendar Core. It coordinates all calendar operations and provides a unified API.
-
-## Import
+The main entry point for the core engine. Orchestrates events, state, navigation, timezones, and plugins.
 
 ```javascript
 import { Calendar } from '@forcecalendar/core';
 
-// Or as default export
-import Calendar from '@forcecalendar/core';
-```
-
-## Constructor
-
-```javascript
-new Calendar(config?)
-```
-
-### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `config.timeZone` | string | System TZ | IANA timezone identifier |
-| `config.weekStartsOn` | number | 0 | Week start day (0=Sunday, 1=Monday) |
-| `config.locale` | string | 'en-US' | Locale for formatting |
-| `config.hourFormat` | string | '12h' | Hour format ('12h' or '24h') |
-| `config.showWeekNumbers` | boolean | false | Display week numbers |
-| `config.showWeekends` | boolean | true | Include weekends in views |
-| `config.businessHours` | object | {start:'09:00',end:'17:00'} | Business hours range |
-
-### Example
-
-```javascript
 const calendar = new Calendar({
-  timeZone: 'America/New_York',
-  weekStartsOn: 1,  // Monday
+  view: 'month',
+  date: new Date(),
+  weekStartsOn: 0,
   locale: 'en-US',
-  hourFormat: '24h',
-  showWeekNumbers: true,
-  businessHours: {
-    start: '08:00',
-    end: '18:00'
-  }
+  timeZone: 'America/New_York',
+  showWeekNumbers: false,
+  showWeekends: true,
+  fixedWeekCount: true,
+  businessHours: { start: '09:00', end: '17:00' },
+  events: []
 });
 ```
 
----
+## Constructor Options
 
-## Properties
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `view` | `'month' \| 'week' \| 'day' \| 'list'` | `'month'` | Initial view |
+| `date` | `Date` | `new Date()` | Initial date to display |
+| `weekStartsOn` | `number` | `0` | Week start day (0=Sunday, 6=Saturday) |
+| `locale` | `string` | `'en-US'` | Locale for date formatting |
+| `timeZone` | `string` | System timezone | IANA timezone identifier |
+| `showWeekNumbers` | `boolean` | `false` | Display week numbers |
+| `showWeekends` | `boolean` | `true` | Show weekend columns |
+| `fixedWeekCount` | `boolean` | `true` | Always show 6 weeks in month view |
+| `businessHours` | `{ start: string, end: string }` | `{ start: '09:00', end: '17:00' }` | Business hours (HH:MM format) |
+| `events` | `EventData[]` | `[]` | Initial events to load |
 
-### eventStore
+## Navigation
 
 ```javascript
-calendar.eventStore // EventStore
+calendar.setView('week');           // Switch to week view
+calendar.setView('day', new Date()); // Switch view and navigate
+
+calendar.next();                    // Next period (month/week/day)
+calendar.previous();                // Previous period
+calendar.today();                   // Navigate to today
+calendar.goToDate(new Date('2026-06-15')); // Navigate to specific date
+
+calendar.getView();                 // Returns current view type
+calendar.getCurrentDate();          // Returns current date (cloned)
 ```
 
-The underlying EventStore instance. Direct access for advanced operations.
-
-### state
+## Event CRUD
 
 ```javascript
-calendar.state // StateManager
-```
-
-The StateManager instance for UI state.
-
-### timezoneManager
-
-```javascript
-calendar.timezoneManager // TimezoneManager
-```
-
-The shared TimezoneManager singleton.
-
----
-
-## Event Methods
-
-### addEvent()
-
-Add a new event to the calendar.
-
-```javascript
-calendar.addEvent(eventData)
-```
-
-**Parameters:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | string | Yes | Unique identifier |
-| `title` | string | Yes | Event title |
-| `start` | Date | Yes | Start date/time |
-| `end` | Date | No | End date/time (defaults to start + 1 hour) |
-| `allDay` | boolean | No | All-day event flag |
-| `description` | string | No | Event description |
-| `location` | string | No | Event location |
-| `category` | string | No | Event category |
-| `status` | string | No | 'confirmed', 'tentative', 'cancelled' |
-| `showAs` | string | No | 'busy', 'free' |
-| `recurring` | boolean | No | Is recurring event |
-| `recurrenceRule` | string | No | RRULE string |
-| `timeZone` | string | No | Event timezone (defaults to calendar TZ) |
-| `attendees` | array | No | List of attendees |
-| `reminders` | array | No | List of reminders |
-
-**Returns:** `Event` - The created event instance
-
-**Example:**
-
-```javascript
-// Simple event
-calendar.addEvent({
-  id: 'event-1',
-  title: 'Team Meeting',
-  start: new Date('2024-01-15T10:00:00'),
-  end: new Date('2024-01-15T11:00:00')
+// Add an event
+const event = calendar.addEvent({
+  id: 'evt-1',
+  title: 'Meeting',
+  start: new Date('2026-03-01T10:00:00'),
+  end: new Date('2026-03-01T11:00:00'),
+  color: '#2563EB',
+  description: 'Weekly sync',
+  location: 'Room 301'
 });
 
-// All-day event
-calendar.addEvent({
-  id: 'holiday-1',
-  title: 'Company Holiday',
-  start: new Date('2024-12-25'),
-  allDay: true
+// Update an event
+calendar.updateEvent('evt-1', {
+  title: 'Updated Meeting',
+  end: new Date('2026-03-01T11:30:00')
 });
 
-// Recurring event
-calendar.addEvent({
-  id: 'standup-1',
-  title: 'Daily Standup',
-  start: new Date('2024-01-15T09:00:00'),
-  end: new Date('2024-01-15T09:15:00'),
+// Remove an event
+calendar.removeEvent('evt-1'); // Returns boolean
+calendar.deleteEvent('evt-1'); // Alias for removeEvent
+
+// Get events
+calendar.getEvent('evt-1');        // Single event or null
+calendar.getEvents();              // All events
+calendar.setEvents([...]);         // Replace all events
+```
+
+## Querying Events
+
+```javascript
+// Events for a specific date
+calendar.getEventsForDate(new Date('2026-03-01'));
+
+// Events in a date range
+calendar.getEventsInRange(
+  new Date('2026-03-01'),
+  new Date('2026-03-31')
+);
+
+// Advanced query with filters
+calendar.queryEvents({
+  start: new Date('2026-03-01'),
+  end: new Date('2026-03-31'),
+  allDay: false,
   recurring: true,
-  recurrenceRule: 'FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR'
+  status: 'confirmed',
+  categories: ['work', 'meetings'],
+  matchAllCategories: false,
+  hasAttendees: true,
+  organizerEmail: 'alice@example.com',
+  sort: 'start'
 });
 ```
 
----
+## View Data
 
-### updateEvent()
-
-Update an existing event.
+`getViewData()` returns a structured object for rendering the current view. The shape depends on the active view type.
 
 ```javascript
-calendar.updateEvent(eventId, updates)
+const data = calendar.getViewData();
 ```
 
-**Parameters:**
-- `eventId` (string) - ID of event to update
-- `updates` (object) - Fields to update
-
-**Returns:** `Event` - The updated event
-
-**Example:**
-
-```javascript
-calendar.updateEvent('event-1', {
-  title: 'Updated Meeting Title',
-  end: new Date('2024-01-15T12:00:00')
-});
-```
-
----
-
-### removeEvent()
-
-Remove an event from the calendar.
-
-```javascript
-calendar.removeEvent(eventId)
-```
-
-**Parameters:**
-- `eventId` (string) - ID of event to remove
-
-**Returns:** `boolean` - True if event was removed
-
-**Example:**
-
-```javascript
-calendar.removeEvent('event-1');
-```
-
----
-
-### getEvent()
-
-Get an event by ID.
-
-```javascript
-calendar.getEvent(eventId)
-```
-
-**Parameters:**
-- `eventId` (string) - Event ID
-
-**Returns:** `Event | null`
-
-**Example:**
-
-```javascript
-const event = calendar.getEvent('event-1');
-if (event) {
-  console.log(event.title);
-}
-```
-
----
-
-### getAllEvents()
-
-Get all events in the calendar.
-
-```javascript
-calendar.getAllEvents()
-```
-
-**Returns:** `Event[]` - Array of all events
-
----
-
-## Query Methods
-
-### getEventsForDate()
-
-Get all events occurring on a specific date.
-
-```javascript
-calendar.getEventsForDate(date)
-```
-
-**Parameters:**
-- `date` (Date) - The date to query
-
-**Returns:** `Event[]` - Events on that date (sorted by start time)
-
-**Example:**
-
-```javascript
-const today = new Date();
-const events = calendar.getEventsForDate(today);
-events.forEach(event => {
-  console.log(`${event.title} at ${event.start}`);
-});
-```
-
----
-
-### getEventsInRange()
-
-Get events within a date range.
-
-```javascript
-calendar.getEventsInRange(startDate, endDate, options?)
-```
-
-**Parameters:**
-- `startDate` (Date) - Range start
-- `endDate` (Date) - Range end
-- `options.includeRecurring` (boolean) - Expand recurring events (default: true)
-
-**Returns:** `Event[]` - Events in range
-
-**Example:**
-
-```javascript
-const startOfMonth = new Date('2024-01-01');
-const endOfMonth = new Date('2024-01-31');
-const events = calendar.getEventsInRange(startOfMonth, endOfMonth);
-```
-
----
-
-### getEventsForMonth()
-
-Get all events for a specific month.
-
-```javascript
-calendar.getEventsForMonth(year, month)
-```
-
-**Parameters:**
-- `year` (number) - Year
-- `month` (number) - Month (0-11)
-
-**Returns:** `Event[]`
-
-**Example:**
-
-```javascript
-const january2024Events = calendar.getEventsForMonth(2024, 0);
-```
-
----
-
-### getEventsForWeek()
-
-Get events for a week starting from a date.
-
-```javascript
-calendar.getEventsForWeek(date)
-```
-
-**Parameters:**
-- `date` (Date) - Any date in the target week
-
-**Returns:** `Event[]`
-
----
-
-## View Methods
-
-### getMonthView()
-
-Generate month view data.
-
-```javascript
-calendar.getMonthView(date?)
-```
-
-**Parameters:**
-- `date` (Date) - Target month (defaults to current date)
-
-**Returns:**
+### Month View Data
 
 ```javascript
 {
+  type: 'month',
+  year: 2026,
+  month: 2,           // 0-indexed (March)
+  monthName: 'March',
+  startDate: Date,     // First visible date
+  endDate: Date,       // Last visible date
   weeks: [
     {
-      weekNumber: 1,
+      weekNumber: 10,
       days: [
         {
           date: Date,
-          isToday: boolean,
-          isCurrentMonth: boolean,
-          isWeekend: boolean,
-          events: Event[]
-        },
-        // ... 7 days
+          dayOfMonth: 1,
+          isCurrentMonth: true,
+          isToday: false,
+          isWeekend: false,
+          events: [Event, ...]
+        }
       ]
-    },
-    // ... 4-6 weeks
-  ],
-  month: number,
-  year: number
-}
-```
-
-**Example:**
-
-```javascript
-const monthData = calendar.getMonthView(new Date('2024-01-15'));
-
-monthData.weeks.forEach(week => {
-  week.days.forEach(day => {
-    console.log(`${day.date}: ${day.events.length} events`);
-  });
-});
-```
-
----
-
-### getWeekView()
-
-Generate week view data.
-
-```javascript
-calendar.getWeekView(date?)
-```
-
-**Returns:**
-
-```javascript
-{
-  days: [
-    {
-      date: Date,
-      isToday: boolean,
-      events: Event[],
-      allDayEvents: Event[],
-      timedEvents: Event[]
-    },
-    // ... 7 days
-  ],
-  weekNumber: number
-}
-```
-
----
-
-### getDayView()
-
-Generate day view data.
-
-```javascript
-calendar.getDayView(date?)
-```
-
-**Returns:**
-
-```javascript
-{
-  date: Date,
-  isToday: boolean,
-  events: Event[],
-  allDayEvents: Event[],
-  timedEvents: Event[],
-  hours: [
-    { hour: 0, events: Event[] },
-    // ... 24 hours
+    }
   ]
 }
 ```
 
----
-
-## Navigation Methods
-
-### navigate()
-
-Navigate to a specific date.
+### Week View Data
 
 ```javascript
-calendar.navigate(date)
+{
+  type: 'week',
+  weekNumber: 10,
+  startDate: Date,
+  endDate: Date,
+  days: [
+    {
+      date: Date,
+      dayOfMonth: 1,
+      dayOfWeek: 0,
+      dayName: 'Sunday',
+      isToday: false,
+      isWeekend: true,
+      events: [Event, ...],
+      overlapGroups: [[Event, Event], ...],
+      getEventPositions: (events) => Map
+    }
+  ]
+}
 ```
 
-**Example:**
+### Day View Data
 
 ```javascript
-calendar.navigate(new Date('2024-06-15'));
+{
+  type: 'day',
+  date: Date,
+  dayName: 'Monday',
+  isToday: true,
+  allDayEvents: [Event, ...],
+  hours: [
+    { hour: 0, time: '12:00 AM', events: [] },
+    { hour: 9, time: '9:00 AM', events: [Event, ...] },
+    // ... 24 slots
+  ]
+}
 ```
 
----
-
-### navigateToday()
-
-Navigate to today's date.
+### List View Data
 
 ```javascript
-calendar.navigateToday()
+{
+  type: 'list',
+  startDate: Date,
+  endDate: Date,        // 30 days from start
+  totalEvents: 42,
+  days: [
+    {
+      date: Date,
+      dayName: 'Monday',
+      isToday: false,
+      events: [Event, ...]
+    }
+  ]
+}
 ```
 
----
-
-### navigateNext()
-
-Navigate to next period (based on current view).
+## Selection
 
 ```javascript
-calendar.navigateNext()
+calendar.selectEvent('evt-1');
+calendar.clearEventSelection();
+
+calendar.selectDate(new Date('2026-03-15'));
+calendar.clearDateSelection();
 ```
 
-- In month view: next month
-- In week view: next week
-- In day view: next day
-
----
-
-### navigatePrevious()
-
-Navigate to previous period.
+## Timezones
 
 ```javascript
-calendar.navigatePrevious()
-```
+calendar.setTimezone('America/Los_Angeles');
+calendar.getTimezone(); // 'America/Los_Angeles'
 
----
-
-## State Methods
-
-### setView()
-
-Set the current view type.
-
-```javascript
-calendar.setView(view)
-```
-
-**Parameters:**
-- `view` (string) - 'month', 'week', 'day', or 'list'
-
-**Example:**
-
-```javascript
-calendar.setView('week');
-```
-
----
-
-### getView()
-
-Get the current view type.
-
-```javascript
-calendar.getView() // Returns: 'month', 'week', 'day', or 'list'
-```
-
----
-
-### getCurrentDate()
-
-Get the currently focused date.
-
-```javascript
-calendar.getCurrentDate() // Returns: Date
-```
-
----
-
-## Event Subscriptions
-
-### on()
-
-Subscribe to calendar events.
-
-```javascript
-calendar.on(eventName, callback)
-```
-
-**Event Types:**
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `eventAdd` | `{ event }` | Event added |
-| `eventUpdate` | `{ event, previousEvent }` | Event updated |
-| `eventRemove` | `{ event }` | Event removed |
-| `viewChange` | `{ view, previousView }` | View changed |
-| `navigate` | `{ date, previousDate }` | Navigation occurred |
-| `stateChange` | `{ state, previousState }` | Any state change |
-
-**Returns:** Unsubscribe function
-
-**Example:**
-
-```javascript
-const unsubscribe = calendar.on('eventAdd', ({ event }) => {
-  console.log(`New event: ${event.title}`);
-});
-
-// Later, to stop listening:
-unsubscribe();
-```
-
----
-
-### off()
-
-Remove an event listener.
-
-```javascript
-calendar.off(eventName, callback)
-```
-
----
-
-## ICS Methods
-
-### importICS()
-
-Import events from ICS string.
-
-```javascript
-calendar.importICS(icsString)
-```
-
-**Parameters:**
-- `icsString` (string) - ICS formatted calendar data
-
-**Returns:** `Event[]` - Array of imported events
-
-**Example:**
-
-```javascript
-const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:meeting-1
-SUMMARY:Team Meeting
-DTSTART:20240115T100000
-DTEND:20240115T110000
-END:VEVENT
-END:VCALENDAR`;
-
-const imported = calendar.importICS(icsContent);
-console.log(`Imported ${imported.length} events`);
-```
-
----
-
-### exportICS()
-
-Export events to ICS format.
-
-```javascript
-calendar.exportICS(events?, calendarName?)
-```
-
-**Parameters:**
-- `events` (Event[]) - Events to export (defaults to all)
-- `calendarName` (string) - Calendar name in export
-
-**Returns:** `string` - ICS formatted string
-
-**Example:**
-
-```javascript
-const icsString = calendar.exportICS(
-  calendar.getAllEvents(),
-  'My Calendar'
+// Convert between timezones
+const converted = calendar.convertTimezone(
+  new Date(),
+  'America/New_York',
+  'Europe/London'
 );
 
-// Download or save the string
-```
+// Convert to/from calendar timezone
+calendar.toCalendarTimezone(date, 'UTC');
+calendar.fromCalendarTimezone(date, 'Asia/Tokyo');
 
----
-
-## Utility Methods
-
-### destroy()
-
-Clean up resources. Call when done with the calendar.
-
-```javascript
-calendar.destroy()
-```
-
-**Example:**
-
-```javascript
-// In a React component's cleanup
-useEffect(() => {
-  const calendar = new Calendar();
-  return () => calendar.destroy();
-}, []);
-```
-
----
-
-### getTimezone()
-
-Get the calendar's timezone.
-
-```javascript
-calendar.getTimezone() // Returns: string (IANA identifier)
-```
-
----
-
-### setTimezone()
-
-Change the calendar's timezone.
-
-```javascript
-calendar.setTimezone(timezone)
-```
-
-**Parameters:**
-- `timezone` (string) - IANA timezone identifier
-
-**Example:**
-
-```javascript
-calendar.setTimezone('Europe/London');
-```
-
----
-
-## Complete Example
-
-```javascript
-import { Calendar } from '@forcecalendar/core';
-
-// Create calendar
-const calendar = new Calendar({
-  timeZone: 'America/New_York',
-  weekStartsOn: 1
+// Format in a timezone
+calendar.formatInTimezone(new Date(), 'Europe/Berlin', {
+  dateStyle: 'full',
+  timeStyle: 'short'
 });
 
-// Subscribe to events
-calendar.on('eventAdd', ({ event }) => {
-  console.log(`Added: ${event.title}`);
+// Get timezone list with offsets
+const timezones = calendar.getTimezones();
+// [{ value: 'America/New_York', label: 'Eastern Time', offset: '-05:00' }, ...]
+```
+
+## Configuration
+
+```javascript
+calendar.setLocale('de-DE');
+calendar.setWeekStartsOn(1); // Monday
+```
+
+## Overlap Detection
+
+```javascript
+// Get groups of overlapping events for a date
+const groups = calendar.getOverlapGroups(new Date(), true);
+
+// Calculate column positions for overlapping events
+const positions = calendar.calculateEventPositions(events);
+// Map { 'evt-1' => { column: 0, totalColumns: 2 }, ... }
+```
+
+## Plugins
+
+```javascript
+const myPlugin = {
+  install(calendar) {
+    calendar.on('eventAdd', ({ event }) => {
+      console.log('Event added:', event.title);
+    });
+  },
+  uninstall(calendar) {
+    // cleanup
+  }
+};
+
+calendar.use(myPlugin);
+```
+
+## Events
+
+Subscribe to calendar events using `on()`. Returns an unsubscribe function.
+
+```javascript
+const unsub = calendar.on('eventAdd', ({ event }) => {
+  console.log('Added:', event.title);
 });
 
-calendar.on('eventUpdate', ({ event, previousEvent }) => {
-  console.log(`Updated: ${previousEvent.title} -> ${event.title}`);
-});
+// Later: unsub();
+```
 
-// Add events
-calendar.addEvent({
-  id: '1',
-  title: 'Morning Meeting',
-  start: new Date('2024-01-15T09:00:00'),
-  end: new Date('2024-01-15T10:00:00')
-});
+| Event | Payload | When |
+|-------|---------|------|
+| `viewChange` | `{ view, date }` | View type changed |
+| `navigate` | `{ direction, date, view }` | Navigation occurred |
+| `eventAdd` | `{ event }` | Event added |
+| `eventUpdate` | `{ event, oldEvent }` | Event updated |
+| `eventRemove` | `{ event }` | Event removed |
+| `eventsSet` | `{ events }` | All events replaced |
+| `eventSelect` | `{ event }` | Event selected |
+| `eventDeselect` | `{ eventId }` | Event deselected |
+| `dateSelect` | `{ date }` | Date selected |
+| `dateDeselect` | `{ date }` | Date deselected |
+| `stateChange` | `{ newState, oldState }` | Any state change |
+| `eventStoreChange` | `EventStoreChange` | Store-level change |
+| `timezoneChange` | `{ timezone, previousTimezone }` | Timezone changed |
+| `localeChange` | `{ locale }` | Locale changed |
+| `weekStartsOnChange` | `{ weekStartsOn }` | Week start changed |
+| `destroy` | — | Calendar destroyed |
 
-calendar.addEvent({
-  id: '2',
-  title: 'Weekly Sync',
-  start: new Date('2024-01-15T14:00:00'),
-  end: new Date('2024-01-15T15:00:00'),
-  recurring: true,
-  recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO'
-});
+## Cleanup
 
-// Query events
-const todayEvents = calendar.getEventsForDate(new Date());
-console.log(`${todayEvents.length} events today`);
-
-// Generate view data
-const monthView = calendar.getMonthView();
-monthView.weeks.forEach(week => {
-  const eventCount = week.days.reduce((sum, day) => sum + day.events.length, 0);
-  console.log(`Week ${week.weekNumber}: ${eventCount} events`);
-});
-
-// Navigate
-calendar.setView('week');
-calendar.navigateNext();
-
-// Export
-const ics = calendar.exportICS();
-console.log(ics);
-
-// Cleanup
-calendar.destroy();
+```javascript
+calendar.destroy(); // Removes all listeners, clears stores, uninstalls plugins
 ```
