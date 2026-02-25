@@ -22,7 +22,7 @@ public static List<Map<String, Object>> getEvents(
 )
 ```
 
-Queries Event records in the given date range. If `recordId` is provided, filters by `WhoId` or `WhatId`.
+Queries Event records in the given date range. If `recordId` is provided, filters by `WhoId` or `WhatId`. Both `startDateTime` and `endDateTime` are required; omitting either throws an `AuraHandledException`.
 
 **Returns** a list of maps with these keys:
 
@@ -40,6 +40,8 @@ Queries Event records in the given date range. If `recordId` is provided, filter
 | `backgroundColor` | `String` | Hardcoded `#0176D3` |
 
 **Limits**: Returns up to 1,000 events, ordered by `StartDateTime ASC`.
+
+**Wire usage in LWC**: The LWC component wires this method with reactive parameters `$_startDateTime`, `$_endDateTime`, and `$recordId`. When the user navigates or changes views, the date range parameters update and the wire adapter automatically re-fetches.
 
 ### createEvent
 
@@ -64,6 +66,10 @@ Creates a new Event record. Validates:
 - End date is after start date
 
 **Returns** the new Event Id.
+
+:::note LWC Parameter Mapping
+The LWC component currently passes `title`, `startDateTime`, `endDateTime`, `isAllDay`, and `description` from the calendar event data. The `location`, `whoId`, and `whatId` parameters are accepted by the Apex method but are not populated by the default LWC `_handleEventCreate` handler. To pass these values, extend the event handler or use the Apex method directly via imperative calls.
+:::
 
 ### updateEvent
 
@@ -104,4 +110,20 @@ The controller class uses `with sharing` to respect org sharing rules.
 
 ## Error Handling
 
-All methods wrap exceptions in `AuraHandledException` for proper error propagation to the LWC layer. The LWC component displays errors via `ShowToastEvent`.
+All methods use a consistent exception handling pattern:
+
+```apex
+try {
+    // Business logic
+} catch (AuraHandledException e) {
+    throw e;  // Re-throw known errors
+} catch (Exception e) {
+    throw new AuraHandledException(e.getMessage());  // Wrap unexpected errors
+}
+```
+
+This ensures all errors reach the LWC layer as `AuraHandledException`, which the component displays via `ShowToastEvent`.
+
+## Test Class
+
+`ForceCalendarControllerTest` is included in the distribution and provides test coverage for all CRUD methods. It is deployed alongside the controller to satisfy Salesforce's code coverage requirements.
