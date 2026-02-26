@@ -1,0 +1,68 @@
+---
+title: Recent Security Fixes
+description: Security issues identified and fixed in recent audits.
+---
+
+## Audit Summary
+
+A comprehensive security audit identified several issues across the codebase. All critical and high-priority issues have been addressed.
+
+## Fixed Issues
+
+### ICS Parser Input Limits
+
+**Severity:** High
+**Component:** `ICSParser.parse()`
+**Issue:** No size limit on ICS input strings. A maliciously large ICS file could cause memory exhaustion or excessive parsing time.
+**Fix:** Added configurable size limits for ICS input and individual field values. The parser now rejects inputs exceeding the configured maximum before parsing begins.
+
+### SSRF via ICS URL Import
+
+**Severity:** High
+**Component:** `ICSHandler.importFromURL()`
+**Issue:** The `importFromURL()` method accepted arbitrary URLs, which could be used for Server-Side Request Forgery (SSRF) in server-side contexts.
+**Fix:** Added URL validation and an allowlist mechanism. In Salesforce contexts, ICS URL import is not available (network requests are blocked by CSP). In other contexts, URL validation rejects private/internal network addresses.
+
+### Prototype Pollution in StateManager
+
+**Severity:** Medium
+**Component:** `StateManager.setState()`
+**Issue:** The `setState()` method merged user-provided objects without stripping dangerous prototype keys.
+**Fix:** Added explicit deletion of `__proto__`, `constructor`, and `prototype` keys from the updates object before merging.
+
+### CSS Injection via Theme Variables
+
+**Severity:** Medium
+**Component:** `StyleUtils.setCSSVariables()`
+**Issue:** CSS variable values were not sanitized, allowing potential CSS injection via `url()` or `expression()` functions.
+**Fix:** Added `StyleUtils.sanitizeColor()` which validates color values and rejects strings containing `url(`, `expression(`, semicolons, and `javascript:` protocol.
+
+### innerHTML Usage in Renderers
+
+**Severity:** Medium
+**Component:** View renderers in `@forcecalendar/interface`
+**Issue:** Some renderer paths used `innerHTML` for convenience, which could be exploited if event content contained HTML.
+**Fix:** Replaced all `innerHTML` usage with `document.createElement()` and `textContent` assignments. No renderer now uses any HTML string parsing.
+
+### Unbounded Recurrence Expansion
+
+**Severity:** Low
+**Component:** `RecurrenceEngine.expandEvent()`
+**Issue:** The `maxOccurrences` parameter defaulted to a high value, and certain frequency/rule combinations could generate excessive occurrences.
+**Fix:** Set a reasonable default of 365 occurrences and documented the parameter. The `RecurrenceEngineV2` adds occurrence caching to mitigate repeated expansion.
+
+## Recommendations
+
+### For Deployments
+
+1. **Keep packages updated.** Security fixes are released in patch versions.
+2. **Use the Apex controller for Salesforce data access.** Never expose ICS URL import in Salesforce contexts.
+3. **Set appropriate CSP headers** when deploying the interface package outside Salesforce.
+4. **Limit event data size** at the application layer if accepting user-generated content.
+
+### For Contributors
+
+1. **Never use innerHTML** in renderer code. Use `createElement` + `textContent`.
+2. **Validate all external inputs** at trust boundaries (parser methods, state updates).
+3. **Add size limits** to any new parser or processor that handles external data.
+4. **Test with malformed inputs** including oversized strings, special characters, and prototype pollution attempts.

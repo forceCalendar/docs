@@ -1,0 +1,190 @@
+---
+title: LWC Integration
+description: Lightning Web Component wrapper -- @api properties, @wire, lifecycle, and event handling.
+---
+
+## Component Definition
+
+The `forceCalendar` LWC wraps `forcecal-main` and bridges it with Salesforce.
+
+### @api Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `currentView` | `string` | `'month'` | Initial view type |
+| `height` | `string` | `'600px'` | Calendar height |
+| `recordId` | `string` | `null` | Related record ID for context-filtered events |
+| `readOnly` | `boolean` | `false` | Disable event creation/editing |
+
+```html
+<c-force-calendar
+  current-view="week"
+  record-id={recordId}
+  height="700px"
+  read-only
+></c-force-calendar>
+```
+
+### @api Methods
+
+| Method | Description |
+|--------|-------------|
+| `refreshEvents()` | Force reload events from Salesforce |
+| `addEvent(event)` | Programmatically add an event |
+| `setView(view)` | Change the view |
+| `goToDate(date)` | Navigate to a date |
+
+```js
+// From a parent component
+this.template.querySelector('c-force-calendar').refreshEvents();
+this.template.querySelector('c-force-calendar').setView('week');
+```
+
+## Reactive Data Loading
+
+Events are loaded via `@wire`:
+
+```js
+import getEvents from '@salesforce/apex/ForceCalendarController.getEvents';
+
+@wire(getEvents, {
+  startDateTime: '$startDate',
+  endDateTime: '$endDate',
+  recordId: '$recordId'
+})
+wiredEvents({ error, data }) {
+  if (data) {
+    this.events = data;
+    this.updateCalendarEvents();
+  } else if (error) {
+    this.error = error;
+  }
+}
+```
+
+The `$startDate` and `$endDate` reactive properties are updated when the user navigates, triggering automatic data refresh.
+
+## Dynamic Element Creation
+
+Due to Locker Service restrictions on static ES module imports of custom elements, the LWC creates `forcecal-main` dynamically:
+
+```js
+renderedCallback() {
+  if (this.calendarInitialized) return;
+
+  const container = this.template.querySelector('.calendar-container');
+  if (!container) return;
+
+  // Create the element dynamically to bypass static analysis
+  const calendarEl = document.createElement('forcecal-main');
+  calendarEl.setAttribute('view', this.currentView);
+  calendarEl.setAttribute('height', this.height);
+
+  // Attach event listeners
+  calendarEl.addEventListener('calendar-navigate', (e) => {
+    this.handleNavigate(e.detail);
+  });
+  calendarEl.addEventListener('calendar-event-add', (e) => {
+    this.handleEventAdd(e.detail);
+  });
+  // ... more listeners
+
+  container.appendChild(calendarEl);
+  this.calendarElement = calendarEl;
+  this.calendarInitialized = true;
+}
+```
+
+The `lwc:dom="manual"` directive on the container allows direct DOM manipulation:
+
+```html
+<div class="calendar-container" lwc:dom="manual"></div>
+```
+
+## Event Handling
+
+### Navigation
+
+When the user navigates in the calendar:
+
+```js
+handleNavigate(detail) {
+  const { date, view } = detail;
+  // Update wire parameters to trigger new data fetch
+  this.startDate = this.getViewStart(date, view);
+  this.endDate = this.getViewEnd(date, view);
+}
+```
+
+### CRUD Operations
+
+Event creation, update, and deletion use imperative Apex calls:
+
+```js
+import createEvent from '@salesforce/apex/ForceCalendarController.createEvent';
+
+async handleEventAdd(detail) {
+  try {
+    const result = await createEvent({
+      title: detail.event.title,
+      startDateTime: detail.event.start,
+      endDateTime: detail.event.end,
+      isAllDay: detail.event.allDay || false,
+      description: detail.event.description || '',
+      location: detail.event.location || '',
+    });
+    // Refresh to pick up the new event
+    this.refreshEvents();
+  } catch (error) {
+    this.showError(error);
+  }
+}
+```
+
+## Error Handling
+
+The component displays errors using SLDS styling:
+
+```html
+<template if:true={error}>
+  <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+    <span class="slds-assistive-text">error</span>
+    <span class="slds-icon_container slds-icon-utility-error slds-m-right_x-small"></span>
+    <h2>{errorMessage}</h2>
+    <button class="slds-button slds-button_neutral" onclick={handleRetry}>
+      Retry
+    </button>
+  </div>
+</template>
+```
+
+## Template Structure
+
+```html
+<template>
+  <div class="slds-card">
+    <!-- Loading spinner -->
+    <template if:true={isLoading}>
+      <lightning-spinner alternative-text="Loading" size="medium">
+      </lightning-spinner>
+    </template>
+
+    <!-- Error display -->
+    <template if:true={error}>
+      <!-- Error alert with retry -->
+    </template>
+
+    <!-- Calendar container (manual DOM) -->
+    <div class="calendar-container" lwc:dom="manual"></div>
+
+    <!-- Refresh button -->
+    <div class="slds-p-around_x-small">
+      <lightning-button
+        label="Refresh"
+        onclick={handleRefresh}
+        icon-name="utility:refresh"
+      ></lightning-button>
+    </div>
+  </div>
+</template>
+```

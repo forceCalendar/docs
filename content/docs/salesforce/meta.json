@@ -1,0 +1,10 @@
+{
+  "title": "Salesforce",
+  "pages": [
+    "index",
+    "lwc-integration",
+    "apex-controller",
+    "deployment",
+    "locker-service"
+  ]
+}

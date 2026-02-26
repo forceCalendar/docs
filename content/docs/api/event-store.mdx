@@ -1,0 +1,96 @@
+---
+title: EventStore
+description: API reference for the EventStore class.
+---
+
+```js
+import { EventStore } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new EventStore(options?: { timezone?: string })
+```
+
+## Event CRUD
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `addEvent` | `(data: EventData) => Event` | Created Event |
+| `updateEvent` | `(id: string, updates: object) => Event` | Updated Event |
+| `removeEvent` | `(id: string) => void` | — |
+| `getEvent` | `(id: string) => Event \| undefined` | Event |
+| `getAllEvents` | `() => Event[]` | All events |
+| `clear` | `() => void` | — |
+| `loadEvents` | `(events: EventData[]) => void` | — |
+
+## Querying
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `queryEvents` | `(filters: QueryFilters) => Event[]` | Filtered events |
+| `getEventsForDate` | `(date: Date, tz?: string) => Event[]` | Events on date |
+| `getEventsInRange` | `(start: Date, end: Date, expand?: boolean, tz?: string) => Event[]` | Events in range |
+| `getOverlappingEvents` | `(event: Event) => Event[]` | Overlapping events |
+
+### QueryFilters
+
+| Field | Type |
+|-------|------|
+| `start` | `Date` |
+| `end` | `Date` |
+| `date` | `Date` |
+| `month` | `number` |
+| `year` | `number` |
+| `allDay` | `boolean` |
+| `recurring` | `boolean` |
+| `status` | `string` |
+| `categories` | `string[]` |
+| `hasAttendees` | `boolean` |
+| `organizerEmail` | `string` |
+| `sort` | `'start' \| 'end' \| 'title'` |
+
+## Conflict Detection
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `hasConflicts` | `(event: Event) => boolean` | — |
+| `checkConflicts` | `(event: Event, options?: object) => object` | Conflict details |
+| `getAllConflicts` | `() => Array<[Event, Event]>` | All conflict pairs |
+| `getOverlapGroups` | `(date?: Date, tz?: string) => Event[][]` | Overlap groups |
+| `calculateEventPositions` | `(date?: Date, tz?: string) => Map` | Positions |
+| `getBusyPeriods` | `(start: Date, end: Date) => Array<{start, end}>` | Busy periods |
+| `getFreePeriods` | `(start: Date, end: Date) => Array<{start, end}>` | Free periods |
+| `addEventWithConflictCheck` | `(data: EventData, options?: object) => Event` | Created Event |
+| `findEventsWithConflicts` | `() => Event[]` | Conflicting events |
+
+## Batch Operations
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `startBatch` | `(enableRollback?: boolean) => void` | — |
+| `commitBatch` | `() => void` | — |
+| `rollbackBatch` | `() => void` | — |
+| `executeBatch` | `(fn: Function, enableRollback?: boolean) => void` | — |
+| `addEvents` | `(events: EventData[]) => Event[]` | Created events |
+| `updateEvents` | `(updates: Array<{id, ...}>) => Event[]` | Updated events |
+| `removeEvents` | `(ids: string[]) => void` | — |
+
+## Recurrence
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `expandRecurringEvent` | `(event: Event, start: Date, end: Date) => Event[]` | Occurrences |
+
+## Subscriptions
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `subscribe` | `(callback: Function) => Function` | Unsubscribe function |
+
+## Lifecycle
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `destroy` | `() => void` | — |

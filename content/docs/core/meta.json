@@ -1,0 +1,17 @@
+{
+  "title": "Core Package",
+  "pages": [
+    "index",
+    "calendar",
+    "enhanced-calendar",
+    "event",
+    "event-store",
+    "recurrence",
+    "ics",
+    "search",
+    "state-management",
+    "date-utils",
+    "timezone",
+    "performance"
+  ]
+}

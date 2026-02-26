@@ -1,0 +1,58 @@
+---
+title: StateManager
+description: API reference for the StateManager class.
+---
+
+```js
+import { StateManager } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new StateManager(initialState?: Partial<CalendarState>)
+```
+
+## Reading State
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getState` | `() => CalendarState` | Frozen state copy |
+| `get` | `(key: string) => any` | State value |
+
+## Updating State
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `setState` | `(updates: object \| Function) => void` | — |
+| `setView` | `(view: string) => void` | — |
+| `setCurrentDate` | `(date: Date) => void` | — |
+| `navigateNext` | `() => void` | — |
+| `navigatePrevious` | `() => void` | — |
+| `navigateToday` | `() => void` | — |
+| `selectEvent` | `(eventId: string) => void` | — |
+| `clearEventSelection` | `() => void` | — |
+| `selectDate` | `(date: Date) => void` | — |
+| `clearDateSelection` | `() => void` | — |
+| `setLoading` | `(loading: boolean, message?: string) => void` | — |
+| `setError` | `(error: Error \| string \| null) => void` | — |
+| `updateFilters` | `(filters: object) => void` | — |
+
+## Subscriptions
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `subscribe` | `(callback: (newState, oldState) => void) => Function` | Unsubscribe |
+| `watch` | `(keys: string \| string[], callback: Function) => Function` | Unsubscribe |
+
+## Undo/Redo
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `canUndo` | `() => boolean` | — |
+| `canRedo` | `() => boolean` | — |
+| `getUndoCount` | `() => number` | — |
+| `getRedoCount` | `() => number` | — |
+| `undo` | `() => boolean` | Success |
+| `redo` | `() => boolean` | Success |
+| `reset` | `() => void` | — |

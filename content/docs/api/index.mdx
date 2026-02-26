@@ -1,0 +1,76 @@
+---
+title: API Reference
+description: Complete API reference for all public classes in @forcecalendar/core.
+---
+
+## All Public Classes
+
+These classes are exported from `@forcecalendar/core`:
+
+### Core
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [Calendar](/docs/api/calendar) | `@forcecalendar/core` | Main calendar controller |
+| [EnhancedCalendar](/docs/api/enhanced-calendar) | `@forcecalendar/core` | Calendar + search + recurrence v2 |
+
+### Events
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [Event](/docs/api/event) | `@forcecalendar/core` | Event model |
+| [EventStore](/docs/api/event-store) | `@forcecalendar/core` | Indexed event storage |
+
+### Recurrence
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [RecurrenceEngine](/docs/api/recurrence-engine) | `@forcecalendar/core` | Static recurrence expansion |
+| [RRuleParser](/docs/api/rrule-parser) | `@forcecalendar/core` | RRULE string parsing |
+
+### ICS
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [ICSParser](/docs/api/ics-parser) | `@forcecalendar/core` | Low-level ICS parser |
+| [ICSHandler](/docs/api/ics-handler) | `@forcecalendar/core` | High-level ICS operations |
+
+### State
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [StateManager](/docs/api/state-manager) | `@forcecalendar/core` | Immutable state management |
+
+### Search
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [EventSearch](/docs/api/event-search) | `@forcecalendar/core` | Full-text search |
+| [SearchWorkerManager](/docs/api/search-worker-manager) | `@forcecalendar/core` | Web Worker search |
+
+### Utilities
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [DateUtils](/docs/api/date-utils) | `@forcecalendar/core` | Static date utilities |
+
+### Performance
+
+| Class | Import | Description |
+|-------|--------|-------------|
+| [PerformanceOptimizer](/docs/api/performance-optimizer) | `@forcecalendar/core` | Caching and metrics |
+| [LRUCache](/docs/api/lru-cache) | `@forcecalendar/core` | O(1) LRU cache |
+
+## Import Patterns
+
+```js
+// Everything from main entry
+import { Calendar, Event, EventStore, ... } from '@forcecalendar/core';
+
+// Specific subpath exports
+import { Calendar } from '@forcecalendar/core/calendar';
+import { Event } from '@forcecalendar/core/events';
+import { StateManager } from '@forcecalendar/core/state';
+import { EventSearch } from '@forcecalendar/core/search';
+import { ICSHandler } from '@forcecalendar/core/ics';
+```

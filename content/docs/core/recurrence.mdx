@@ -1,0 +1,254 @@
+---
+title: Recurrence
+description: RFC 5545 recurrence rule parsing, expansion, and modified instance handling.
+---
+
+## Overview
+
+forceCalendar provides three classes for recurrence handling:
+
+| Class | API Style | Purpose |
+|-------|-----------|---------|
+| `RRuleParser` | Static | Parse/build RRULE strings, validate rules |
+| `RecurrenceEngine` | Static | Expand recurring events into occurrences |
+| `RecurrenceEngineV2` | Instance | Enhanced expansion with modified instances, DST, caching |
+
+All three follow RFC 5545 (iCalendar) for recurrence rule syntax and semantics.
+
+## RRuleParser
+
+Parses RRULE strings into structured rule objects and generates RRULE strings from rule objects.
+
+### parse(rrule)
+
+Parse an RRULE string or validate a rule object.
+
+```js
+import { RRuleParser } from '@forcecalendar/core';
+
+const rule = RRuleParser.parse('FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12');
+// {
+//   freq: 'WEEKLY',
+//   interval: 1,
+//   count: 12,
+//   until: null,
+//   byDay: ['MO', 'WE', 'FR'],
+//   byWeekNo: [],
+//   byMonth: [],
+//   byMonthDay: [],
+//   byYearDay: [],
+//   bySetPos: [],
+//   byHour: [],
+//   byMinute: [],
+//   bySecond: [],
+//   wkst: 'MO',
+//   exceptions: [],
+//   tzid: null,
+// }
+```
+
+### Parsed Rule Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `freq` | `string` | Frequency: `SECONDLY`, `MINUTELY`, `HOURLY`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY` |
+| `interval` | `number` | Repeat every N periods (minimum 1) |
+| `count` | `number\|null` | Maximum number of occurrences |
+| `until` | `Date\|null` | End date (mutually exclusive with `count`) |
+| `byDay` | `string[]` | Days of week: `'MO'`, `'2TU'` (2nd Tuesday), `'-1FR'` (last Friday) |
+| `byWeekNo` | `number[]` | ISO week numbers (1-53, or -53 to -1) |
+| `byMonth` | `number[]` | Months (1-12) |
+| `byMonthDay` | `number[]` | Days of month (1-31, or -31 to -1) |
+| `byYearDay` | `number[]` | Days of year (1-366, or -366 to -1) |
+| `bySetPos` | `number[]` | Position within frequency period |
+| `byHour` | `number[]` | Hours (0-23) |
+| `byMinute` | `number[]` | Minutes (0-59) |
+| `bySecond` | `number[]` | Seconds (0-59) |
+| `wkst` | `string` | Week start day (default `'MO'`) |
+| `exceptions` | `Date[]` | Exception dates (EXDATE) |
+| `tzid` | `string\|null` | Timezone identifier |
+
+### buildRRule(rule)
+
+Generate an RRULE string from a rule object.
+
+```js
+const rruleStr = RRuleParser.buildRRule({
+  freq: 'MONTHLY',
+  byDay: ['-1FR'],
+  count: 6,
+});
+// 'FREQ=MONTHLY;COUNT=6;BYDAY=-1FR'
+```
+
+### getDescription(rule)
+
+Generate a human-readable description.
+
+```js
+RRuleParser.getDescription(rule);
+// 'Every week on Monday, Wednesday, Friday, 12 times'
+```
+
+### Validation
+
+The parser validates rules on parse:
+
+- `RRULE` cannot have both `COUNT` and `UNTIL`
+- `interval` minimum is 1
+- `byMonth` values are clamped to 1-12
+- `byMonthDay` values are clamped to -31 to 31 (excluding 0)
+- `byWeekNo` values are clamped to -53 to 53 (excluding 0)
+- `byYearDay` values are clamped to -366 to 366 (excluding 0)
+
+## RecurrenceEngine
+
+Static methods for expanding recurring events into individual occurrences within a date range.
+
+### expandEvent(event, rangeStart, rangeEnd, maxOccurrences?, timezone?)
+
+Expand a recurring event into occurrences within a date range.
+
+```js
+import { RecurrenceEngine } from '@forcecalendar/core';
+
+const event = {
+  start: new Date('2026-01-05T09:00:00'),
+  end: new Date('2026-01-05T10:00:00'),
+  recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO;COUNT=12',
+};
+
+const occurrences = RecurrenceEngine.expandEvent(
+  event,
+  new Date('2026-03-01'),
+  new Date('2026-03-31'),
+  365,                    // maxOccurrences safety limit (default: 365)
+  'America/New_York'      // timezone
+);
+// Returns array of Event-like objects, each with adjusted start/end dates
+```
+
+Each occurrence is a clone of the original event with:
+- `start` and `end` adjusted to the occurrence date
+- `isOccurrence: true` flag
+- `originalEventId` referencing the recurring event
+- `occurrenceDate` for this specific occurrence
+
+### Supported Frequencies
+
+| Frequency | BYDAY | BYMONTHDAY | BYSETPOS |
+|-----------|-------|------------|----------|
+| `DAILY` | Filters to matching weekdays | - | - |
+| `WEEKLY` | Selects specific weekdays | - | - |
+| `MONTHLY` | Nth weekday (`2TU`, `-1FR`) | Specific days of month | Position filter |
+| `YEARLY` | Nth weekday in month | Day of month | Position filter |
+
+### Exception Handling
+
+The engine respects EXDATE exceptions stored in the rule:
+
+```js
+const rule = RRuleParser.parse(
+  'FREQ=WEEKLY;BYDAY=MO;EXDATE=20260309T090000Z'
+);
+// March 9 occurrence will be skipped
+```
+
+### addExceptions(rule, exceptions, options?)
+
+Add exception dates to an existing rule.
+
+```js
+RecurrenceEngine.addExceptions(rule, [
+  new Date('2026-03-16'),
+  new Date('2026-03-23'),
+]);
+```
+
+### getNextOccurrence(currentDate, rule, timezone?)
+
+Get the next occurrence after a given date.
+
+```js
+const next = RecurrenceEngine.getNextOccurrence(
+  new Date(),
+  rule,
+  'America/New_York'
+);
+```
+
+## RecurrenceEngineV2
+
+Instance-based recurrence engine with three capabilities beyond the static engine:
+
+1. **Modified instances** -- Edit individual occurrences of a recurring event
+2. **DST-aware expansion** -- Pre-calculates DST transitions for accurate timing
+3. **Occurrence caching** -- LRU cache (100 entries) for repeated expansions
+
+```js
+import { RecurrenceEngineV2 } from '@forcecalendar/core';
+
+const engine = new RecurrenceEngineV2();
+```
+
+### expandEvent(event, rangeStart, rangeEnd, options?)
+
+```js
+const occurrences = engine.expandEvent(event, rangeStart, rangeEnd, {
+  maxOccurrences: 365,
+  timezone: 'America/New_York',
+  useCache: true,
+});
+```
+
+### Modified Instances
+
+Edit a single occurrence without changing the recurring rule:
+
+```js
+// Change the March 10 occurrence
+engine.addModifiedInstance('evt_weekly', new Date('2026-03-10'), {
+  title: 'Special Standup',
+  location: 'Room 202',
+  start: new Date('2026-03-10T09:30:00'),
+});
+
+// Retrieve modification
+const mod = engine.getModifiedInstance('evt_weekly', new Date('2026-03-10'));
+```
+
+### Exception Management
+
+```js
+// Cancel an occurrence
+engine.addException('evt_weekly', new Date('2026-03-17'), 'Holiday');
+
+// Check if a date is an exception
+engine.isException('evt_weekly', new Date('2026-03-17')); // true
+
+// Get the reason
+engine.getExceptionReason('evt_weekly', new Date('2026-03-17')); // 'Holiday'
+```
+
+### DST Handling
+
+RecurrenceEngineV2 pre-calculates DST transitions for the expansion range using `findDSTTransitions()`. When an occurrence falls on a DST boundary, `adjustForDST()` corrects the time to maintain the intended wall-clock time.
+
+For example, a 9:00 AM weekly meeting stays at 9:00 AM even when clocks change, rather than shifting to 8:00 AM or 10:00 AM.
+
+## Common RRULE Examples
+
+```
+FREQ=DAILY                              Every day
+FREQ=DAILY;INTERVAL=2                   Every other day
+FREQ=WEEKLY;BYDAY=MO,WE,FR             Mon/Wed/Fri weekly
+FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH     Every other Tue/Thu
+FREQ=MONTHLY;BYMONTHDAY=1              First of every month
+FREQ=MONTHLY;BYMONTHDAY=-1             Last day of every month
+FREQ=MONTHLY;BYDAY=2MO                 Second Monday monthly
+FREQ=MONTHLY;BYDAY=-1FR                Last Friday monthly
+FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=15    March 15 yearly
+FREQ=YEARLY;BYMONTH=11;BYDAY=4TH       4th Thursday in November
+FREQ=WEEKLY;BYDAY=MO;COUNT=10          10 Mondays
+FREQ=DAILY;UNTIL=20261231T235959Z      Daily until end of 2026
+```

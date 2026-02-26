@@ -1,0 +1,238 @@
+---
+title: State Management
+description: Immutable state with undo/redo, key-specific watchers, and change notifications.
+---
+
+## Overview
+
+`StateManager` implements an immutable state pattern for the calendar. Every state transition produces a new state object. It provides undo/redo history, key-specific watchers, and prototype pollution protection.
+
+```js
+import { StateManager } from '@forcecalendar/core';
+
+const state = new StateManager({
+  view: 'month',
+  currentDate: new Date(),
+});
+```
+
+## State Shape
+
+The full state object has these keys with their defaults:
+
+```js
+{
+  // View
+  view: 'month',           // 'month', 'week', 'day', 'list'
+  currentDate: new Date(),
+
+  // Selection
+  selectedEventId: null,
+  selectedDate: null,
+  hoveredEventId: null,
+  hoveredDate: null,
+
+  // Display
+  weekStartsOn: 0,         // 0=Sun, 1=Mon, ... 6=Sat
+  showWeekNumbers: false,
+  showWeekends: true,
+  fixedWeekCount: true,
+
+  // Time
+  timeZone: 'auto',        // Detected via Intl.DateTimeFormat
+  locale: 'en-US',
+  hourFormat: '12h',        // '12h' or '24h'
+
+  // Business hours
+  businessHours: {
+    start: '09:00',
+    end: '17:00',
+  },
+
+  // Filters
+  filters: {
+    searchTerm: '',
+    categories: [],
+    showAllDay: true,
+    showTimed: true,
+  },
+
+  // Interaction flags
+  isDragging: false,
+  isResizing: false,
+  isCreating: false,
+
+  // Loading
+  isLoading: false,
+  loadingMessage: '',
+
+  // Error
+  error: null,
+
+  // Custom
+  metadata: {},
+}
+```
+
+## Reading State
+
+### getState()
+
+Returns a frozen copy of the full state object. Modifications to the returned object throw in strict mode.
+
+```js
+const current = state.getState();
+console.log(current.view);        // 'month'
+console.log(current.currentDate); // Date
+```
+
+### get(key)
+
+Get a single state value.
+
+```js
+const view = state.get('view'); // 'month'
+```
+
+## Updating State
+
+### setState(updates)
+
+Update state with a partial object or an updater function.
+
+```js
+// Object form
+state.setState({ view: 'week' });
+
+// Updater function form
+state.setState((current) => ({
+  currentDate: new Date(current.currentDate.getTime() + 86400000),
+}));
+```
+
+Nested objects (`filters`, `businessHours`, `metadata`) are shallow-merged:
+
+```js
+state.setState({
+  filters: { searchTerm: 'meeting' },
+  // Other filter keys (categories, showAllDay, showTimed) are preserved
+});
+```
+
+**Prototype pollution protection.** Before merging, `setState` deletes `__proto__`, `constructor`, and `prototype` keys from the updates object.
+
+### Convenience Methods
+
+| Method | Equivalent |
+|--------|-----------|
+| `setView(view)` | `setState({ view })` with validation |
+| `setCurrentDate(date)` | `setState({ currentDate: date })` with Date validation |
+| `navigateNext()` | Advance by one period based on view |
+| `navigatePrevious()` | Go back by one period based on view |
+| `navigateToday()` | `setCurrentDate(new Date())` |
+| `selectEvent(eventId)` | `setState({ selectedEventId: eventId })` |
+| `clearEventSelection()` | `setState({ selectedEventId: null })` |
+| `selectDate(date)` | `setState({ selectedDate: date })` |
+| `clearDateSelection()` | `setState({ selectedDate: null })` |
+| `setLoading(bool, msg?)` | `setState({ isLoading, loadingMessage })` |
+| `setError(error)` | `setState({ error })` |
+| `updateFilters(filters)` | Merge into `filters` sub-object |
+
+## Subscriptions
+
+### subscribe(callback)
+
+Subscribe to all state changes. Returns an unsubscribe function.
+
+```js
+const unsub = state.subscribe((newState, oldState) => {
+  console.log('State changed:', newState);
+});
+
+// Later:
+unsub();
+```
+
+### watch(keys, callback)
+
+Subscribe to changes on specific state keys. The callback only fires when one of the watched keys actually changes.
+
+```js
+const unsub = state.watch(['view', 'currentDate'], (newValue, oldValue, newState, oldState) => {
+  console.log('View or date changed');
+});
+
+// Watch a single key
+const unsub2 = state.watch('selectedEventId', (newId, oldId) => {
+  if (newId) {
+    showEventDetails(newId);
+  }
+});
+```
+
+## Undo/Redo
+
+StateManager maintains a history stack (max 50 entries) for undo/redo operations. Each state snapshot is deep-cloned to prevent shared references.
+
+### canUndo()
+
+Returns `true` if undo is available.
+
+### canRedo()
+
+Returns `true` if redo is available.
+
+### getUndoCount()
+
+Number of undo steps available.
+
+### getRedoCount()
+
+Number of redo steps available.
+
+### undo()
+
+Revert to the previous state. Returns `true` if undo was performed.
+
+```js
+if (state.canUndo()) {
+  state.undo();
+}
+```
+
+### redo()
+
+Advance to the next state in history. Returns `true` if redo was performed.
+
+```js
+if (state.canRedo()) {
+  state.redo();
+}
+```
+
+### reset()
+
+Reset state to the initial values (first entry in history).
+
+```js
+state.reset();
+```
+
+## Change Detection
+
+State changes are detected using a deep equality check that handles:
+
+- Primitives (strict equality)
+- Arrays (element-wise comparison)
+- Dates (`.getTime()` comparison)
+- Objects (recursive key/value comparison)
+- Circular references (tracked via `Set` to prevent infinite loops)
+
+If `setState()` is called with values identical to the current state, no change is recorded and no listeners are notified.
+
+## Implementation Details
+
+- The history stack has a maximum size of 50. When exceeded, the oldest entry is discarded.
+- Each history entry is a deep clone of the state at that point, including nested objects and Date instances.
+- Undo/redo operations bypass history recording -- they restore a historical snapshot without creating a new history entry.
+- Key-specific watchers use reference equality (`!==`) for the top-level key comparison, so nested object changes only trigger if the parent key reference changes.

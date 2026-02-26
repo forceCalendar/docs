@@ -1,0 +1,300 @@
+---
+title: EventStore
+description: Indexed event storage with O(1) lookups, batch operations, and conflict detection.
+---
+
+## Overview
+
+`EventStore` is the storage and query engine for calendar events. It maintains five indices for fast lookups and provides batch operations with rollback support.
+
+```js
+import { EventStore } from '@forcecalendar/core';
+
+const store = new EventStore({ timezone: 'America/New_York' });
+```
+
+## Indices
+
+The store maintains these internal indices, all backed by `Map<string, Set<string>>`:
+
+| Index | Key | Purpose |
+|-------|-----|---------|
+| `byDate` | Date string (`YYYY-MM-DD`) | Events occurring on each date |
+| `byMonth` | Month string (`YYYY-MM`) | Events occurring in each month |
+| `recurring` | — | Set of all recurring event IDs |
+| `byCategory` | Category string | Events tagged with each category |
+| `byStatus` | Status string | Events grouped by status |
+
+All indices are updated synchronously when events are added, updated, or removed.
+
+## Event CRUD
+
+### addEvent(eventData)
+
+Add an event. Data is normalized through `Event.normalize()` and validated. Returns the created `Event` instance.
+
+```js
+const event = store.addEvent({
+  title: 'Standup',
+  start: new Date('2026-03-01T09:00:00'),
+  end: new Date('2026-03-01T09:15:00'),
+});
+```
+
+### updateEvent(eventId, updates)
+
+Update an event by ID. Re-indexes the event if dates, categories, or status change.
+
+```js
+store.updateEvent('evt_123', {
+  title: 'Updated Standup',
+  end: new Date('2026-03-01T09:30:00'),
+});
+```
+
+### removeEvent(eventId)
+
+Remove an event by ID. Removes from all indices.
+
+```js
+store.removeEvent('evt_123');
+```
+
+### getEvent(eventId)
+
+Get a single event by ID. Returns `undefined` if not found.
+
+### getAllEvents()
+
+Returns all events as an array.
+
+### clear()
+
+Remove all events and clear all indices.
+
+### loadEvents(events)
+
+Clear the store and load an array of events. Each event is normalized and indexed.
+
+## Querying
+
+### queryEvents(filters)
+
+Query events with structured filters. All filter criteria are ANDed together.
+
+```js
+const results = store.queryEvents({
+  start: new Date('2026-03-01'),
+  end: new Date('2026-03-31'),
+  date: new Date('2026-03-15'),       // Specific date
+  month: 2,                           // 0-indexed month
+  year: 2026,
+  allDay: true,
+  recurring: false,
+  status: 'confirmed',
+  categories: ['meeting'],
+  hasAttendees: true,
+  organizerEmail: 'alice@example.com',
+  sort: 'start',                      // Sort by start date
+});
+```
+
+| Filter | Type | Description |
+|--------|------|-------------|
+| `start` | `Date` | Events ending after this date |
+| `end` | `Date` | Events starting before this date |
+| `date` | `Date` | Events occurring on this exact date |
+| `month` | `number` | Events in this month (0-indexed) |
+| `year` | `number` | Events in this year |
+| `allDay` | `boolean` | Filter by all-day status |
+| `recurring` | `boolean` | Filter by recurring status |
+| `status` | `string` | Filter by event status |
+| `categories` | `string[]` | Events matching any of these categories |
+| `hasAttendees` | `boolean` | Events with/without attendees |
+| `organizerEmail` | `string` | Events with this organizer |
+| `sort` | `string` | Sort field (`'start'`, `'end'`, `'title'`) |
+
+### getEventsForDate(date, timezone?)
+
+Fast date-based lookup using the `byDate` index. Returns events occurring on the given date.
+
+```js
+const events = store.getEventsForDate(new Date('2026-03-15'));
+```
+
+### getEventsInRange(start, end, expandRecurring?, timezone?)
+
+Get events within a date range. When `expandRecurring` is `true` (default), recurring events are expanded using `RecurrenceEngine`.
+
+```js
+const events = store.getEventsInRange(
+  new Date('2026-03-01'),
+  new Date('2026-03-31'),
+  true, // expand recurring
+  'America/New_York'
+);
+```
+
+### getOverlappingEvents(event)
+
+Find all events that overlap with the given event.
+
+```js
+const overlaps = store.getOverlappingEvents(myEvent);
+```
+
+## Conflict Detection
+
+### hasConflicts(event)
+
+Check if an event conflicts with any existing events. Returns `boolean`.
+
+```js
+if (store.hasConflicts(newEvent)) {
+  console.log('Time conflict detected');
+}
+```
+
+### checkConflicts(event, options?)
+
+Detailed conflict check. Returns an object with conflict information.
+
+### getAllConflicts()
+
+Find all conflicting event pairs in the store.
+
+### getOverlapGroups(date?, timezone?)
+
+Group overlapping events together. Each group is an array of events that mutually overlap.
+
+```js
+const groups = store.getOverlapGroups(new Date('2026-03-15'));
+// [[event1, event2], [event3, event4, event5]]
+```
+
+### calculateEventPositions(date?, timezone?)
+
+Calculate horizontal positioning for overlapping events in a day/week view. Returns a `Map<eventId, position>` where each position has:
+
+```js
+const positions = store.calculateEventPositions(new Date('2026-03-15'));
+positions.get('evt_123');
+// { left: 0, width: 0.5, column: 0, totalColumns: 2 }
+```
+
+### getBusyPeriods(start, end)
+
+Get time periods that have at least one event.
+
+```js
+const busy = store.getBusyPeriods(
+  new Date('2026-03-15T00:00:00'),
+  new Date('2026-03-15T23:59:59')
+);
+// [{ start: Date, end: Date }, ...]
+```
+
+### getFreePeriods(start, end)
+
+Get time periods that have no events.
+
+### addEventWithConflictCheck(eventData, options?)
+
+Add an event only if it doesn't conflict. Throws or returns a conflict report based on options.
+
+### findEventsWithConflicts()
+
+Find all events that have at least one conflict.
+
+## Batch Operations
+
+Batch operations allow multiple CRUD operations to be grouped together with optional rollback support.
+
+### startBatch(enableRollback?)
+
+Begin a batch. When rollback is enabled, a snapshot is taken.
+
+```js
+store.startBatch(true);
+```
+
+### commitBatch()
+
+Commit all batched operations. Notifies subscribers once.
+
+```js
+store.commitBatch();
+```
+
+### rollbackBatch()
+
+Revert all changes made since `startBatch()`. Only available when rollback was enabled.
+
+```js
+store.rollbackBatch();
+```
+
+### executeBatch(operation, enableRollback?)
+
+Execute a function as a batch. Automatically commits on success or rolls back on error.
+
+```js
+store.executeBatch(() => {
+  store.addEvent({ title: 'A', start: new Date(), end: new Date() });
+  store.addEvent({ title: 'B', start: new Date(), end: new Date() });
+  store.removeEvent('evt_old');
+}, true);
+```
+
+### Bulk Methods
+
+```js
+// Add multiple events
+store.addEvents([event1, event2, event3]);
+
+// Update multiple events
+store.updateEvents([
+  { id: 'evt_1', title: 'Updated 1' },
+  { id: 'evt_2', title: 'Updated 2' },
+]);
+
+// Remove multiple events
+store.removeEvents(['evt_1', 'evt_2']);
+```
+
+## Subscriptions
+
+### subscribe(callback)
+
+Subscribe to store changes. Returns an unsubscribe function.
+
+```js
+const unsubscribe = store.subscribe((type, data) => {
+  console.log(`Store ${type}:`, data);
+});
+
+// Later:
+unsubscribe();
+```
+
+Notification types: `'add'`, `'update'`, `'remove'`, `'clear'`, `'load'`, `'batch'`.
+
+## Recurrence Expansion
+
+### expandRecurringEvent(event, rangeStart, rangeEnd)
+
+Expand a single recurring event into individual occurrences within a date range. Delegates to `RecurrenceEngine.expandEvent()`.
+
+```js
+const occurrences = store.expandRecurringEvent(
+  recurringEvent,
+  new Date('2026-03-01'),
+  new Date('2026-03-31')
+);
+```
+
+## Lifecycle
+
+### destroy()
+
+Clean up subscriptions and internal state.

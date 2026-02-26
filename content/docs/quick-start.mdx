@@ -1,0 +1,178 @@
+---
+title: Quick Start
+description: Get a working forceCalendar instance in under 5 minutes.
+---
+
+## Browser / Vanilla JS
+
+Import the core package and create a calendar:
+
+```js
+import { Calendar } from '@forcecalendar/core';
+
+const calendar = new Calendar({
+  view: 'month',
+  date: new Date(),
+  weekStartsOn: 0,       // 0 = Sunday, 1 = Monday
+  locale: 'en-US',
+  timeZone: 'America/New_York',
+  showWeekNumbers: false,
+  showWeekends: true,
+  fixedWeekCount: true,   // Always show 6 weeks in month view
+  businessHours: {
+    start: '09:00',
+    end: '17:00',
+  },
+});
+```
+
+## Adding Events
+
+```js
+// Add a single event
+calendar.addEvent({
+  title: 'Team Standup',
+  start: new Date('2026-03-01T09:00:00'),
+  end: new Date('2026-03-01T09:30:00'),
+  location: 'Conference Room A',
+  color: '#4285f4',
+});
+
+// Add a recurring event
+calendar.addEvent({
+  title: 'Weekly Review',
+  start: new Date('2026-03-02T14:00:00'),
+  end: new Date('2026-03-02T15:00:00'),
+  recurring: true,
+  recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO;COUNT=12',
+});
+
+// Add an all-day event
+calendar.addEvent({
+  title: 'Company Holiday',
+  start: new Date('2026-03-15'),
+  allDay: true,
+  color: '#34a853',
+});
+```
+
+## Querying Events
+
+```js
+// Get events for a specific date
+const todayEvents = calendar.getEventsForDate(new Date());
+
+// Get events in a date range
+const marchEvents = calendar.getEventsInRange(
+  new Date('2026-03-01'),
+  new Date('2026-03-31')
+);
+
+// Query with filters
+const meetings = calendar.queryEvents({
+  categories: ['meeting'],
+  status: 'confirmed',
+  start: new Date('2026-03-01'),
+  end: new Date('2026-03-31'),
+});
+```
+
+## Navigation
+
+```js
+// Navigate between periods
+calendar.next();      // Next month/week/day (based on current view)
+calendar.previous();  // Previous month/week/day
+calendar.today();     // Jump to today
+
+// Switch views
+calendar.setView('week');
+calendar.setView('day');
+calendar.setView('month');
+calendar.setView('list');
+
+// Jump to a specific date
+calendar.goToDate(new Date('2026-06-15'));
+```
+
+## Listening to Events
+
+```js
+calendar.on('eventAdd', (event) => {
+  console.log('Event added:', event.title);
+});
+
+calendar.on('navigate', ({ date, view }) => {
+  console.log(`Navigated to ${date} in ${view} view`);
+});
+
+calendar.on('viewChange', ({ view }) => {
+  console.log(`View changed to: ${view}`);
+});
+
+calendar.on('eventUpdate', ({ event, changes }) => {
+  console.log('Event updated:', event.id, changes);
+});
+
+calendar.on('eventRemove', ({ eventId }) => {
+  console.log('Event removed:', eventId);
+});
+```
+
+## Web Component Usage
+
+If using `@forcecalendar/interface`, drop the custom element into your HTML:
+
+```html
+<forcecal-main
+  view="month"
+  locale="en-US"
+  timezone="America/New_York"
+  week-starts-on="0"
+  height="600px"
+></forcecal-main>
+```
+
+```js
+import '@forcecalendar/interface';
+
+const el = document.querySelector('forcecal-main');
+
+// Add events via the element API
+el.addEvent({
+  title: 'Meeting',
+  start: new Date('2026-03-01T10:00:00'),
+  end: new Date('2026-03-01T11:00:00'),
+});
+
+// Listen for calendar events
+el.addEventListener('calendar-event-added', (e) => {
+  console.log('Added:', e.detail);
+});
+```
+
+## Salesforce LWC Usage
+
+In a Lightning Web Component:
+
+```html
+<!-- myComponent.html -->
+<template>
+  <c-force-calendar
+    current-view="month"
+    record-id={recordId}
+    height="600px"
+  ></c-force-calendar>
+</template>
+```
+
+```js
+// myComponent.js
+import { LightningElement, api } from 'lwc';
+
+export default class MyComponent extends LightningElement {
+  @api recordId;
+}
+```
+
+The LWC wrapper handles Apex CRUD operations automatically via `@wire`.

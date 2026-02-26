@@ -1,0 +1,277 @@
+---
+title: Event Model
+description: The Event class -- creation, validation, timezone support, attendees, reminders, and categories.
+---
+
+## Overview
+
+The `Event` class represents a calendar event with full timezone support, attendee management, reminders, and category tagging. Events are created through `Event.normalize()` which assigns defaults and generates unique IDs.
+
+```js
+import { Event } from '@forcecalendar/core';
+
+const event = new Event({
+  title: 'Team Meeting',
+  start: new Date('2026-03-01T09:00:00'),
+  end: new Date('2026-03-01T10:00:00'),
+  timeZone: 'America/New_York',
+});
+```
+
+## Constructor Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `id` | `string` | Auto-generated | Unique identifier (`evt_` + random hex) |
+| `title` | `string` | `'Untitled Event'` | Event title |
+| `start` | `Date` | `new Date()` | Start date/time |
+| `end` | `Date` | Start + 1 hour | End date/time |
+| `allDay` | `boolean` | `false` | All-day event flag |
+| `description` | `string` | `''` | Event description |
+| `location` | `string` | `''` | Event location |
+| `color` | `string` | `'#4285f4'` | Primary color |
+| `backgroundColor` | `string` | `null` | Background override |
+| `borderColor` | `string` | `null` | Border override |
+| `textColor` | `string` | `null` | Text color override |
+| `recurring` | `boolean` | `false` | Whether event recurs |
+| `recurrenceRule` | `string\|object` | `null` | RRULE string or parsed rule object |
+| `recurrence` | `string\|object` | `null` | Alias for `recurrenceRule` |
+| `timeZone` | `string` | `null` | IANA timezone for start time |
+| `endTimeZone` | `string` | `null` | IANA timezone for end time (if different) |
+| `status` | `string` | `'confirmed'` | `'confirmed'`, `'tentative'`, `'cancelled'` |
+| `visibility` | `string` | `'public'` | `'public'`, `'private'`, `'confidential'` |
+| `organizer` | `object` | `null` | `{ email, name }` |
+| `attendees` | `Array` | `[]` | Attendee objects |
+| `reminders` | `Array` | `[]` | Reminder objects |
+| `categories` | `Array` | `[]` | Category strings |
+| `category` | `string` | `null` | Shorthand for single category (added to `categories`) |
+| `attachments` | `Array` | `[]` | Attachment objects |
+| `conferenceData` | `object` | `null` | Video conference data |
+| `metadata` | `object` | `{}` | Custom key-value metadata |
+
+## Static Methods
+
+### Event.normalize(data)
+
+Normalize raw event data into a complete event object with defaults applied. Generates an `id` if not present, ensures `start` and `end` are Date objects, and applies default values.
+
+```js
+const normalized = Event.normalize({
+  title: 'Quick Event',
+  start: '2026-03-01T09:00:00',
+});
+// { id: 'evt_a1b2c3...', title: 'Quick Event', start: Date, end: Date, ... }
+```
+
+### Event.validate(data)
+
+Validate event data. Returns `{ valid: boolean, errors: string[] }`.
+
+```js
+const result = Event.validate({ title: '', start: 'invalid' });
+// { valid: false, errors: ['Title is required', 'Invalid start date'] }
+```
+
+Validation checks:
+- Title must be a non-empty string
+- Start must be a valid Date
+- End must be a valid Date
+- End must be after start (unless all-day)
+- Status must be one of the valid values
+- Visibility must be one of the valid values
+
+### Event.fromObject(obj)
+
+Create an Event instance from a plain object.
+
+```js
+const event = Event.fromObject(savedEventData);
+```
+
+## Computed Properties (Getters)
+
+| Getter | Type | Description |
+|--------|------|-------------|
+| `duration` | `number` | Duration in milliseconds |
+| `durationMinutes` | `number` | Duration in minutes |
+| `durationHours` | `number` | Duration in hours (decimal) |
+| `isMultiDay` | `boolean` | Spans midnight |
+| `isCancelled` | `boolean` | Status is `'cancelled'` |
+| `isTentative` | `boolean` | Status is `'tentative'` |
+| `isConfirmed` | `boolean` | Status is `'confirmed'` |
+| `isPrivate` | `boolean` | Visibility is `'private'` |
+| `isPublic` | `boolean` | Visibility is `'public'` |
+| `hasAttendees` | `boolean` | Has at least one attendee |
+| `hasReminders` | `boolean` | Has at least one reminder |
+| `isMeeting` | `boolean` | Has attendees |
+| `isVirtual` | `boolean` | Has conference data |
+| `category` | `string\|null` | Primary (first) category |
+
+## Instance Methods
+
+### isRecurring()
+
+Returns `true` if the event has a recurrence rule.
+
+### occursOn(date)
+
+Check if the event occurs on a specific date (considering timezone).
+
+```js
+event.occursOn(new Date('2026-03-01')); // true
+```
+
+### overlaps(otherEvent)
+
+Check if this event's time range overlaps with another event.
+
+```js
+const hasConflict = eventA.overlaps(eventB);
+```
+
+### contains(datetime)
+
+Check if a specific datetime falls within this event's time range.
+
+### clone(updates?)
+
+Create a copy of this event, optionally with modifications.
+
+```js
+const copy = event.clone({ title: 'Copy of Meeting' });
+```
+
+### toObject()
+
+Serialize to a plain object (for storage or transmission).
+
+```js
+const obj = event.toObject();
+JSON.stringify(obj);
+```
+
+### equals(other)
+
+Deep equality check against another event.
+
+## Timezone Methods
+
+### getStartInTimezone(timezone)
+
+Get the start time converted to a specific timezone.
+
+```js
+const tokyoStart = event.getStartInTimezone('Asia/Tokyo');
+```
+
+### getEndInTimezone(timezone)
+
+Get the end time converted to a specific timezone.
+
+### updateTimes(start, end, timezone?)
+
+Update start/end times, optionally specifying the source timezone.
+
+## Attendee Management
+
+### addAttendee(attendee)
+
+```js
+event.addAttendee({
+  email: 'alice@example.com',
+  name: 'Alice',
+  status: 'needs-action',  // 'accepted', 'declined', 'tentative', 'needs-action'
+  role: 'required',         // 'required', 'optional', 'chair'
+});
+```
+
+### removeAttendee(email)
+
+```js
+event.removeAttendee('alice@example.com');
+```
+
+### updateAttendeeResponse(email, status)
+
+```js
+event.updateAttendeeResponse('alice@example.com', 'accepted');
+```
+
+### getAttendee(email)
+
+Returns the attendee object for the given email, or `undefined`.
+
+### hasAttendee(email)
+
+Returns `boolean`.
+
+### getAttendeesByStatus(status)
+
+```js
+const accepted = event.getAttendeesByStatus('accepted');
+```
+
+### getAttendeeCounts()
+
+```js
+const counts = event.getAttendeeCounts();
+// { total: 5, accepted: 3, declined: 1, tentative: 0, 'needs-action': 1 }
+```
+
+## Reminder Management
+
+### addReminder(reminder)
+
+```js
+event.addReminder({
+  type: 'email',      // 'email', 'popup', 'sms'
+  minutes: 15,        // Minutes before event
+});
+```
+
+### removeReminder(index)
+
+Remove a reminder by its array index.
+
+### getActiveReminders()
+
+Returns reminders that haven't triggered yet.
+
+### getReminderTriggerTimes()
+
+Returns an array of `Date` objects representing when each reminder should fire.
+
+```js
+const times = event.getReminderTriggerTimes();
+// [Date(2026-03-01T08:45:00), Date(2026-03-01T08:00:00)]
+```
+
+## Category Management
+
+### addCategory(category)
+
+```js
+event.addCategory('important');
+```
+
+### removeCategory(category)
+
+```js
+event.removeCategory('important');
+```
+
+### hasCategory(category)
+
+Returns `boolean`.
+
+### hasAnyCategory(categories)
+
+Returns `true` if the event has at least one of the given categories.
+
+```js
+event.hasAnyCategory(['meeting', 'review']); // true if has either
+```
+
+### hasAllCategories(categories)
+
+Returns `true` if the event has all of the given categories.

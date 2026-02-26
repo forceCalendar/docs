@@ -1,0 +1,66 @@
+---
+title: Interface Package Overview
+description: Web Components UI layer for forceCalendar -- Shadow DOM, custom elements, and renderers.
+---
+
+## Architecture
+
+`@forcecalendar/interface` provides a Web Components layer that consumes `@forcecalendar/core`. All components use Shadow DOM (mode `'open'`) for style encapsulation.
+
+```
+interface/src/
+├── components/
+│   └── ForceCalendar.js     Main <forcecal-main> Web Component
+├── core/
+│   ├── BaseComponent.js     Foundation for all components
+│   └── EventBus.js          Cross-component communication
+├── renderers/
+│   ├── MonthViewRenderer.js  Month grid renderer
+│   ├── WeekViewRenderer.js   Week timeline renderer
+│   └── DayViewRenderer.js    Day timeline renderer
+└── utils/
+    ├── StyleUtils.js         CSS custom property theming
+    ├── DateUtils.js          Date formatting helpers
+    └── DOMUtils.js           DOM manipulation utilities
+```
+
+## Component Hierarchy
+
+The main entry point is the `<forcecal-main>` custom element (`ForceCalendar` class). It:
+
+1. Extends `BaseComponent` for lifecycle management
+2. Creates a `Calendar` instance from `@forcecalendar/core`
+3. Delegates rendering to view-specific renderers (Month, Week, Day)
+4. Emits `CustomEvent`s for external integration
+5. Uses `EventBus` for internal cross-component communication
+
+## Custom Element Registration
+
+Importing the package automatically registers the custom element:
+
+```js
+import '@forcecalendar/interface';
+// <forcecal-main> is now available
+```
+
+Or import specific classes without auto-registration:
+
+```js
+import { ForceCalendar, BaseComponent, EventBus } from '@forcecalendar/interface';
+```
+
+## Exports
+
+| Export | Description |
+|--------|-------------|
+| `ForceCalendar` | Main calendar Web Component class |
+| `BaseComponent` | Base class for custom components |
+| `EventBus` | Event bus class |
+| `eventBus` | Singleton EventBus instance |
+| `MonthViewRenderer` | Month grid renderer |
+| `WeekViewRenderer` | Week timeline renderer |
+| `DayViewRenderer` | Day timeline renderer |
+| `StyleUtils` | CSS variable theming utilities |
+| `DateUtils` | Date formatting utilities |
+| `DOMUtils` | DOM manipulation utilities |
+| `StateManager` | Re-exported from core |
