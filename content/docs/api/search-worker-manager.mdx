@@ -1,0 +1,53 @@
+---
+title: SearchWorkerManager
+description: API reference for the SearchWorkerManager and InvertedIndex classes.
+---
+
+```js
+import { SearchWorkerManager, InvertedIndex } from '@forcecalendar/core';
+```
+
+## SearchWorkerManager
+
+### Constructor
+
+```ts
+new SearchWorkerManager(eventStore: EventStore)
+```
+
+### Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `search` | `(query: string, options?: SearchOptions) => Promise<SearchResult[]>` | Search results |
+| `indexEvents` | `() => Promise<void>` | — |
+| `clear` | `() => void` | — |
+| `destroy` | `() => void` | — |
+
+Falls back to `InvertedIndex` when Web Workers are unavailable.
+
+## InvertedIndex
+
+### Constructor
+
+```ts
+new InvertedIndex()
+```
+
+### Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `buildIndex` | `(events: Event[]) => void` | — |
+| `tokenize` | `(text: string) => string[]` | Tokens |
+| `search` | `(query: string, options?: object) => SearchResult[]` | Results |
+| `clear` | `() => void` | — |
+
+### Field Boost Weights
+
+| Field | Boost |
+|-------|-------|
+| `title` | 2.0 |
+| `location` | 1.5 |
+| `category` | 1.5 |
+| `description` | 1.0 |

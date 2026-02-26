@@ -1,0 +1,56 @@
+---
+title: PerformanceOptimizer
+description: API reference for the PerformanceOptimizer class.
+---
+
+```js
+import { PerformanceOptimizer } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new PerformanceOptimizer(options?: {
+  eventCacheSize?: number,    // default 500
+  queryCacheSize?: number,    // default 100
+  dateRangeCacheSize?: number // default 50
+})
+```
+
+## Caching
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `cache` | `(key: string, value: any, type?: string) => void` | — |
+| `getFromCache` | `(key: string, type?: string) => any \| undefined` | Cached value |
+| `optimizeQuery` | `(key: string, fn: Function) => any` | Query result |
+
+Cache types: `'event'`, `'query'`, `'dateRange'`.
+
+## Metrics
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `measure` | `(operation: string, fn: Function) => any` | Function result |
+| `measureAsync` | `(operation: string, fn: Function) => Promise<any>` | Function result |
+| `getMetrics` | `() => object` | All metrics |
+
+## Lazy Indexing
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `shouldUseLazyIndexing` | `(event: Event) => boolean` | — |
+| `createLazyIndexMarkers` | `(event: Event) => void` | — |
+| `expandLazyIndex` | `(eventId: string, start: Date, end: Date) => void` | — |
+
+## Batch
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `batch` | `(operation: Function) => any` | Result |
+
+## Lifecycle
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `destroy` | `() => void` | — |

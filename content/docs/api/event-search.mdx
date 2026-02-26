@@ -1,0 +1,50 @@
+---
+title: EventSearch
+description: API reference for the EventSearch class.
+---
+
+```js
+import { EventSearch } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new EventSearch(eventStore: EventStore)
+```
+
+## Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `search` | `(query: string, options?: SearchOptions) => Event[]` | Matching events |
+| `filter` | `(filters: FilterOptions) => Event[]` | Filtered events |
+| `advancedSearch` | `(query: string, filters?: FilterOptions, options?: SearchOptions) => Event[]` | Combined results |
+| `getSuggestions` | `(partial: string, options?: { field?, limit? }) => string[]` | Suggestions |
+| `getUniqueValues` | `(field: string) => string[]` | Unique values |
+| `groupBy` | `(field: string, options?: object) => object` | Grouped events |
+| `rebuildIndex` | `() => void` | — |
+
+## SearchOptions
+
+| Option | Type | Default |
+|--------|------|---------|
+| `fields` | `string[]` | `['title', 'description', 'location']` |
+| `fuzzy` | `boolean` | `false` |
+| `caseSensitive` | `boolean` | `false` |
+| `limit` | `number` | `50` |
+| `sortBy` | `string` | `'relevance'` |
+
+## FilterOptions
+
+| Option | Type |
+|--------|------|
+| `dateRange` | `{ start: Date, end: Date }` |
+| `categories` | `string[]` |
+| `locations` | `string[]` |
+| `attendees` | `string[]` |
+| `status` | `string[]` |
+| `allDay` | `boolean` |
+| `recurring` | `boolean` |
+| `hasReminders` | `boolean` |
+| `custom` | `(event: Event) => boolean` |

@@ -1,0 +1,53 @@
+---
+title: ICSParser
+description: API reference for the ICSParser class.
+---
+
+```js
+import { ICSParser } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new ICSParser()
+```
+
+## Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `parse` | `(icsString: string) => EventData[]` | Array of event objects |
+| `export` | `(events: EventData[], calendarName?: string) => string` | ICS string |
+
+## parse() Output
+
+Each event object contains:
+
+| Property | Source ICS Property |
+|----------|-------------------|
+| `title` | `SUMMARY` |
+| `start` | `DTSTART` |
+| `end` | `DTEND` |
+| `description` | `DESCRIPTION` |
+| `location` | `LOCATION` |
+| `recurrenceRule` | `RRULE` |
+| `status` | `STATUS` |
+| `uid` | `UID` |
+| `organizer` | `ORGANIZER` |
+| `attendees` | `ATTENDEE` |
+| `categories` | `CATEGORIES` |
+| `reminders` | `VALARM` |
+| `allDay` | Detected from date-only `DTSTART` |
+
+## export() Output
+
+Produces a valid RFC 5545 ICS string with:
+
+- `BEGIN:VCALENDAR` / `END:VCALENDAR` wrapper
+- `VERSION:2.0`
+- `PRODID` identifier
+- `VEVENT` blocks for each event
+- `VALARM` blocks for reminders
+- Text escaping (commas, semicolons, newlines)
+- Line folding at 75 octets

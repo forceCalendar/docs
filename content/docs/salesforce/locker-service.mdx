@@ -119,4 +119,4 @@ this.dispatchEvent(new CustomEvent('calendar-navigate', {
 
 5. **Handle Worker fallback.** Expect `SearchWorkerManager` to use the `InvertedIndex` fallback. Design your search UX to work synchronously.
 
-6. **Avoid large event sets.** Without Web Workers, search and recurrence expansion run on the main thread. Keep event counts manageable (<5000) for responsive UI.
+6. **Avoid large event sets.** Without Web Workers, search and recurrence expansion run on the main thread. Keep event counts manageable (under 5000) for responsive UI.

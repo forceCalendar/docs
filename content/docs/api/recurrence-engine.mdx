@@ -1,0 +1,46 @@
+---
+title: RecurrenceEngine
+description: API reference for the RecurrenceEngine static class.
+---
+
+```js
+import { RecurrenceEngine } from '@forcecalendar/core';
+```
+
+All methods are static.
+
+## Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `expandEvent` | `(event, rangeStart: Date, rangeEnd: Date, maxOccurrences?: number, tz?: string) => Event[]` | Occurrence array |
+| `parseRule` | `(ruleString: string) => object` | Parsed rule |
+| `getNextOccurrence` | `(currentDate: Date, rule: object, tz?: string) => Date` | Next date |
+| `matchesByDay` | `(date: Date, byDay: string[]) => boolean` | Day match |
+| `setToWeekdayOfMonth` | `(date: Date, weekday: string, position: number) => Date` | Adjusted date |
+| `isException` | `(date: Date, rule: object, eventId?: string) => boolean` | Is exception |
+| `addExceptions` | `(rule: object, exceptions: Date[], options?: object) => void` | — |
+| `getDescription` | `(rule: object) => string` | Human-readable |
+
+## expandEvent Parameters
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `event` | `Event` | required | The recurring event |
+| `rangeStart` | `Date` | required | Start of expansion range |
+| `rangeEnd` | `Date` | required | End of expansion range |
+| `maxOccurrences` | `number` | `365` | Safety limit |
+| `timezone` | `string` | `undefined` | IANA timezone |
+
+## Occurrence Object Shape
+
+Each expanded occurrence has:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `...event` | — | All properties from original event |
+| `start` | `Date` | Adjusted start for this occurrence |
+| `end` | `Date` | Adjusted end for this occurrence |
+| `isOccurrence` | `boolean` | Always `true` |
+| `originalEventId` | `string` | ID of the recurring event |
+| `occurrenceDate` | `Date` | Date of this occurrence |

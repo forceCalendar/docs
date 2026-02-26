@@ -9,7 +9,7 @@ forceCalendar provides two search implementations:
 
 | Class | Execution | Best For |
 |-------|-----------|----------|
-| `EventSearch` | Main thread | Small datasets (<1000 events), synchronous results |
+| `EventSearch` | Main thread | Small datasets (under 1000 events), synchronous results |
 | `SearchWorkerManager` | Web Worker | Large datasets, non-blocking UI |
 
 Both support fuzzy matching via Levenshtein distance and field-weighted scoring.

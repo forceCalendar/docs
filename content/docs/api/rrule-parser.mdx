@@ -1,0 +1,53 @@
+---
+title: RRuleParser
+description: API reference for the RRuleParser static class.
+---
+
+```js
+import { RRuleParser } from '@forcecalendar/core';
+```
+
+All methods are static.
+
+## Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `parse` | `(rrule: string \| object) => Rule` | Parsed rule object |
+| `buildRRule` | `(rule: Rule) => string` | RRULE string |
+| `getDescription` | `(rule: Rule) => string` | Human-readable text |
+
+## Rule Object Shape
+
+```ts
+interface Rule {
+  freq: 'SECONDLY' | 'MINUTELY' | 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  interval: number;       // >= 1
+  count: number | null;
+  until: Date | null;
+  byDay: string[];        // e.g., ['MO', '2TU', '-1FR']
+  byWeekNo: number[];     // 1-53 or -53 to -1
+  byMonth: number[];      // 1-12
+  byMonthDay: number[];   // 1-31 or -31 to -1
+  byYearDay: number[];    // 1-366 or -366 to -1
+  bySetPos: number[];
+  byHour: number[];       // 0-23
+  byMinute: number[];     // 0-59
+  bySecond: number[];     // 0-59
+  wkst: string;           // Default 'MO'
+  exceptions: Date[];
+  tzid: string | null;
+}
+```
+
+## Private Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `parseFrequency` | `(freq: string) => string` | Validate frequency |
+| `parseByDay` | `(value: string) => string[]` | Parse BYDAY |
+| `parseIntList` | `(value: string) => number[]` | Parse integer CSV |
+| `parseDateTime` | `(value: string) => Date` | Parse RFC 5545 date |
+| `parseExceptionDates` | `(value: string) => Date[]` | Parse EXDATE |
+| `validateRule` | `(rule: Rule) => Rule` | Validate and clamp |
+| `formatDateTime` | `(date: Date) => string` | Format as `YYYYMMDDTHHMMSSZ` |
