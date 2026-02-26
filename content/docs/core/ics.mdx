@@ -16,6 +16,18 @@ forceCalendar provides two classes for ICS (iCalendar) handling:
 
 Direct parser for ICS formatted strings. Handles VEVENT components, VALARM (reminders), line folding/unfolding, and RFC 5545 date formats.
 
+### Input Size Limits
+
+The parser enforces hard limits to prevent denial-of-service from oversized inputs:
+
+| Limit | Value |
+|-------|-------|
+| Maximum input size | 50 MB |
+| Maximum line count | 100,000 lines |
+| Maximum event count | 10,000 events |
+
+Inputs exceeding these limits throw an error before parsing begins.
+
 ### parse(icsString)
 
 Parse an ICS string into an array of event objects.

@@ -134,6 +134,8 @@ Each occurrence is a clone of the original event with:
 - `originalEventId` referencing the recurring event
 - `occurrenceDate` for this specific occurrence
 
+Regardless of the `maxOccurrences` parameter, expansion is capped by a `MAX_OCCURRENCES_HARD_LIMIT` of **10,000** to prevent runaway expansion from malformed or unbounded rules.
+
 ### Supported Frequencies
 
 | Frequency | BYDAY | BYMONTHDAY | BYSETPOS |
