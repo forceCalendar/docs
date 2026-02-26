@@ -119,7 +119,7 @@ state.setState({
 });
 ```
 
-**Prototype pollution protection.** Before merging, `setState` deletes `__proto__`, `constructor`, and `prototype` keys from the updates object.
+**Prototype pollution protection.** Before merging, `setState` runs `_deepSanitize` on the updates object, which recursively strips `__proto__`, `constructor`, and `prototype` keys at all nesting levels (up to a depth limit of 10).
 
 ### Convenience Methods
 
