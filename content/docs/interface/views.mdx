@@ -1,0 +1,130 @@
+---
+title: View Renderers
+description: Month, week, and day view rendering -- layout, event positioning, and overflow handling.
+---
+
+## Overview
+
+Each calendar view has a dedicated renderer class that produces DOM content for the `<forcecal-main>` component. Renderers use pure JavaScript DOM creation (no `innerHTML`) for Locker Service compatibility.
+
+## MonthViewRenderer
+
+Renders a grid of 5-6 weeks with 7 days per week.
+
+### Layout
+
+```
+┌─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+│ Sun │ Mon │ Tue │ Wed │ Thu │ Fri │ Sat │ ← Day headers
+├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+│  1  │  2  │  3  │  4  │  5  │  6  │  7  │
+│ evt │ evt │     │     │ evt │     │     │
+│     │ evt │     │     │     │     │     │
+│     │+2mo │     │     │     │     │     │ ← "+2 more"
+├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+│ ... │     │     │     │     │     │     │
+```
+
+### Event Display Rules
+
+- Maximum 3 events per day cell
+- Overflow shown as "+N more" link
+- Events sorted by: all-day first, then by start time
+- All-day events span the full cell width
+- Event colors use the event's `color` or `backgroundColor` property
+
+### Configuration
+
+| Setting | Controlled By |
+|---------|--------------|
+| Week start day | `weekStartsOn` attribute (0-6) |
+| Show 6 weeks | `fixedWeekCount` in Calendar config |
+| Show weekends | `showWeekends` in Calendar config |
+| Show week numbers | `showWeekNumbers` in Calendar config |
+| Today highlight | Automatic (uses `--fc-today-bg`) |
+| Current month | Days outside current month are dimmed |
+
+### CSS Classes
+
+| Class | Applied To |
+|-------|-----------|
+| `.fc-month-grid` | Grid container |
+| `.fc-day-header` | Day name headers |
+| `.fc-day-cell` | Individual day cells |
+| `.fc-day-number` | Day number |
+| `.fc-day-today` | Today's cell |
+| `.fc-day-other-month` | Days outside current month |
+| `.fc-day-weekend` | Weekend days |
+| `.fc-day-selected` | Selected date |
+| `.fc-event` | Event elements |
+| `.fc-event-allday` | All-day events |
+| `.fc-more-link` | "+N more" overflow link |
+
+## WeekViewRenderer
+
+Renders a 7-day timeline with hourly time slots.
+
+### Layout
+
+```
+┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+│      │ Sun  │ Mon  │ Tue  │ Wed  │ Thu  │ Fri  │ Sat  │
+├──────┼──────┴──────┴──────┴──────┴──────┴──────┴──────┤
+│      │ [All-day events row]                            │
+├──────┼──────┬──────┬──────┬──────┬──────┬──────┬──────┤
+│ 8 AM │      │      │      │      │      │      │      │
+│ 9 AM │      │▓▓▓▓▓▓│      │      │▓▓▓▓▓▓│      │      │
+│10 AM │      │▓▓▓▓▓▓│      │      │▓▓▓▓▓▓│      │      │
+│11 AM │      │      │      │      │      │      │      │
+│12 PM │      │      │▓▓▓▓▓▓│      │      │      │      │
+│ ...  │      │      │      │      │      │      │      │
+```
+
+### Event Positioning
+
+Timed events are positioned absolutely within their day column:
+
+- **Top**: `(startHour * 60 + startMinute) / (24 * 60) * 100%`
+- **Height**: `(durationMinutes) / (24 * 60) * 100%`
+- **Left/Width**: Calculated by `EventStore.calculateEventPositions()` for overlap handling
+
+When events overlap:
+1. Events are grouped into overlap groups
+2. Each group member gets a column assignment
+3. Width is divided equally: `1 / totalColumns`
+4. Left offset: `column / totalColumns`
+
+### Business Hours
+
+The time range defined by `businessHours` (default 9:00-17:00) is visually distinguished using `--fc-bg-secondary`.
+
+## DayViewRenderer
+
+Renders a single-day timeline. Same layout principles as WeekViewRenderer but with more detail per event.
+
+### Differences from Week View
+
+- Full event titles shown (week view may truncate)
+- Event times and locations displayed
+- More vertical space per event
+- All-day events in a dedicated header section
+
+## Renderer API
+
+All renderers follow the same interface:
+
+```js
+class ViewRenderer {
+  render(container, viewData, options) {
+    // Populate container with DOM elements
+  }
+}
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `container` | DOM element to render into |
+| `viewData` | Output from `Calendar.getViewData()` |
+| `options` | Configuration (locale, timezone, event handlers) |
+
+Renderers clear the container and rebuild the DOM on each render call. They do not use virtual DOM diffing.

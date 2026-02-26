@@ -1,0 +1,228 @@
+---
+title: ICS Import/Export
+description: RFC 5545 ICS parsing, generation, URL subscriptions, and file handling.
+---
+
+## Overview
+
+forceCalendar provides two classes for ICS (iCalendar) handling:
+
+| Class | Purpose |
+|-------|---------|
+| `ICSParser` | Low-level RFC 5545 parser and generator |
+| `ICSHandler` | High-level import/export with subscriptions and file I/O |
+
+## ICSParser
+
+Direct parser for ICS formatted strings. Handles VEVENT components, VALARM (reminders), line folding/unfolding, and RFC 5545 date formats.
+
+### parse(icsString)
+
+Parse an ICS string into an array of event objects.
+
+```js
+import { ICSParser } from '@forcecalendar/core';
+
+const parser = new ICSParser();
+const events = parser.parse(`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example//EN
+BEGIN:VEVENT
+DTSTART:20260301T090000Z
+DTEND:20260301T100000Z
+SUMMARY:Team Meeting
+DESCRIPTION:Weekly sync
+LOCATION:Room 301
+RRULE:FREQ=WEEKLY;BYDAY=MO
+END:VEVENT
+END:VCALENDAR`);
+```
+
+Returns an array of normalized event objects with:
+- `title` (from SUMMARY)
+- `start` / `end` (Date objects, from DTSTART/DTEND)
+- `description` (from DESCRIPTION, text unescaped)
+- `location` (from LOCATION)
+- `recurrenceRule` (from RRULE)
+- `reminders` (from VALARM components)
+- `allDay` (detected from date-only DTSTART)
+- `status`, `uid`, `organizer`, `attendees`
+
+### Supported ICS Properties
+
+| ICS Property | Mapped To |
+|-------------|-----------|
+| `SUMMARY` | `title` |
+| `DTSTART` | `start` |
+| `DTEND` | `end` |
+| `DESCRIPTION` | `description` |
+| `LOCATION` | `location` |
+| `RRULE` | `recurrenceRule` |
+| `STATUS` | `status` |
+| `UID` | `uid` |
+| `ORGANIZER` | `organizer` |
+| `ATTENDEE` | `attendees[]` |
+| `CATEGORIES` | `categories` |
+| `VALARM` | `reminders[]` |
+
+### export(events, calendarName?)
+
+Generate an ICS string from an array of events.
+
+```js
+const icsString = parser.export(events, 'My Calendar');
+```
+
+The output includes:
+- `BEGIN:VCALENDAR` / `END:VCALENDAR` wrapper
+- `VERSION:2.0`
+- `PRODID` identifier
+- `VEVENT` blocks for each event
+- `VALARM` blocks for reminders
+- Proper text escaping (commas, semicolons, newlines)
+- Line folding at 75 octets per RFC 5545
+
+### Date Format Support
+
+The parser handles three RFC 5545 date formats:
+
+| Format | Example | Interpretation |
+|--------|---------|----------------|
+| Date only | `20260301` | All-day event, local date |
+| Local datetime | `20260301T090000` | Local time (no timezone) |
+| UTC datetime | `20260301T090000Z` | UTC time |
+
+## ICSHandler
+
+High-level ICS operations built on top of `ICSParser`. Requires a `Calendar` or `EventStore` instance.
+
+```js
+import { ICSHandler } from '@forcecalendar/core';
+
+const handler = new ICSHandler(calendar);
+```
+
+### import(input, options?)
+
+Import events from an ICS string or File object.
+
+```js
+// From string
+await handler.import(icsString, {
+  merge: true,           // Add to existing events (vs. replace)
+  updateExisting: false, // Update events with matching UIDs
+  skipDuplicates: true,  // Skip events with duplicate UIDs
+  dateRange: {           // Only import events in this range
+    start: new Date('2026-01-01'),
+    end: new Date('2026-12-31'),
+  },
+  categories: ['imported'], // Add these categories to imported events
+});
+
+// From File object (browser)
+const file = document.querySelector('input[type="file"]').files[0];
+await handler.import(file);
+```
+
+### export(options?)
+
+Export events as an ICS string.
+
+```js
+const icsString = await handler.export({
+  dateRange: {
+    start: new Date('2026-03-01'),
+    end: new Date('2026-03-31'),
+  },
+  categories: ['meeting'],    // Only export these categories
+  calendarName: 'Work',
+  includeRecurring: true,
+  expandRecurring: false,     // Export rules (not expanded occurrences)
+});
+```
+
+### downloadAsFile(filename?, options?)
+
+Export and trigger a browser download.
+
+```js
+await handler.downloadAsFile('calendar.ics', {
+  calendarName: 'My Calendar',
+});
+```
+
+### importFromURL(url, options?)
+
+Fetch and import an ICS file from a URL.
+
+```js
+await handler.importFromURL('https://example.com/calendar.ics', {
+  merge: true,
+});
+```
+
+### subscribe(url, options?)
+
+Subscribe to a remote ICS calendar with automatic refresh.
+
+```js
+const subscription = handler.subscribe(
+  'https://example.com/calendar.ics',
+  {
+    refreshInterval: 300000, // 5 minutes (milliseconds)
+    merge: true,
+  }
+);
+
+// Control the subscription
+subscription.refresh();  // Force refresh now
+subscription.stop();     // Pause auto-refresh
+subscription.start();    // Resume auto-refresh
+```
+
+### validate(icsString)
+
+Validate an ICS string without importing.
+
+```js
+const result = handler.validate(icsString);
+// { valid: true, errors: [], eventCount: 5 }
+```
+
+## Examples
+
+### Import from File Upload
+
+```js
+document.getElementById('import-btn').addEventListener('click', async () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.ics,.ical,.ifb';
+
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const result = await handler.import(file, {
+        merge: true,
+        skipDuplicates: true,
+      });
+      console.log(`Imported ${result.imported} events`);
+    }
+  };
+
+  input.click();
+});
+```
+
+### Export Monthly Calendar
+
+```js
+const now = new Date();
+const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+await handler.downloadAsFile('monthly-calendar.ics', {
+  dateRange: { start: startOfMonth, end: endOfMonth },
+  calendarName: 'Monthly Export',
+});
+```

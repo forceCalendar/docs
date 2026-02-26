@@ -1,0 +1,71 @@
+---
+title: Core Package Overview
+description: Architecture and module overview for @forcecalendar/core.
+---
+
+## Architecture
+
+`@forcecalendar/core` is the headless calendar engine. It has zero runtime dependencies and ships as pure ESM JavaScript. Every public class is exported from the main entry point at `core/index.js`.
+
+```
+core/
+├── calendar/
+│   ├── Calendar.js          Main calendar controller
+│   └── DateUtils.js          Static date utilities
+├── events/
+│   ├── Event.js              Event model
+│   ├── EventStore.js         Indexed event storage
+│   ├── RecurrenceEngine.js   RFC 5545 recurrence expansion
+│   ├── RecurrenceEngineV2.js Enhanced recurrence with caching
+│   └── RRuleParser.js        RRULE parsing and generation
+├── ics/
+│   ├── ICSParser.js          Low-level ICS parser
+│   └── ICSHandler.js         High-level import/export
+├── integration/
+│   └── EnhancedCalendar.js   Calendar + search + recurrence v2
+├── performance/
+│   ├── AdaptiveMemoryManager.js  Dynamic cache sizing
+│   ├── LRUCache.js               O(1) LRU cache
+│   └── PerformanceOptimizer.js   Caching and metrics
+├── search/
+│   ├── EventSearch.js             Full-text search
+│   └── SearchWorkerManager.js     Web Worker search
+├── state/
+│   └── StateManager.js       Immutable state with undo/redo
+├── timezone/
+│   ├── TimezoneManager.js     Timezone operations
+│   └── TimezoneDatabase.js    IANA timezone data
+├── types.js                   TypeScript definitions
+└── index.js                   Main entry point
+```
+
+## Module Relationships
+
+The `Calendar` class is the primary entry point. It composes:
+
+- **StateManager** for view state, navigation, and UI flags
+- **EventStore** for event storage, indexing, and queries
+- **TimezoneManager** for timezone conversions (singleton)
+- **DateUtils** for date calculations
+
+`EnhancedCalendar` extends `Calendar` and adds:
+
+- **SearchWorkerManager** for Web Worker-based full-text search
+- **RecurrenceEngineV2** for modified instance tracking and DST-aware expansion
+
+The `EventStore` uses:
+
+- **RecurrenceEngine** for expanding recurring events in date ranges
+- **ConflictDetector** for overlap detection and busy/free period calculation
+
+## Key Design Decisions
+
+**No DOM dependency.** The entire core package runs in any JavaScript environment -- browser, Node.js, Web Worker, or Salesforce Locker Service. There are no references to `document`, `window`, or any browser API except `Intl.DateTimeFormat` for timezone support and `performance.memory` (with graceful fallback) for memory monitoring.
+
+**O(1) event lookups.** EventStore maintains five indices (`byDate`, `byMonth`, `recurring`, `byCategory`, `byStatus`) backed by `Map<string, Set<string>>`. Adding or removing an event updates all indices in constant time.
+
+**Immutable state transitions.** StateManager creates a new state object on every `setState()` call. Nested objects (`filters`, `businessHours`, `metadata`) are shallow-merged. All state snapshots are deep-cloned before being added to undo/redo history.
+
+**Static recurrence API.** RecurrenceEngine methods are all `static` -- there is no instance state. RecurrenceEngineV2 uses instance methods because it maintains a modified-instance store and occurrence cache.
+
+**Lazy indexing.** PerformanceOptimizer can defer index expansion for recurring events until a specific date range is queried, reducing startup cost for calendars with many recurring events.

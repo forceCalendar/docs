@@ -1,0 +1,59 @@
+---
+title: ICSHandler
+description: API reference for the ICSHandler class.
+---
+
+```js
+import { ICSHandler } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new ICSHandler(calendar: Calendar)
+```
+
+## Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `import` | `(input: string \| File, options?: ImportOptions) => Promise<ImportResult>` | Import result |
+| `export` | `(options?: ExportOptions) => Promise<string>` | ICS string |
+| `downloadAsFile` | `(filename?: string, options?: ExportOptions) => Promise<void>` | — |
+| `importFromURL` | `(url: string, options?: ImportOptions) => Promise<ImportResult>` | Import result |
+| `subscribe` | `(url: string, options?: SubscribeOptions) => Subscription` | Subscription |
+| `validate` | `(icsString: string) => ValidationResult` | Validation result |
+
+## ImportOptions
+
+| Option | Type | Default |
+|--------|------|---------|
+| `merge` | `boolean` | `true` |
+| `updateExisting` | `boolean` | `false` |
+| `skipDuplicates` | `boolean` | `true` |
+| `dateRange` | `{ start: Date, end: Date }` | `undefined` |
+| `categories` | `string[]` | `[]` |
+
+## ExportOptions
+
+| Option | Type | Default |
+|--------|------|---------|
+| `dateRange` | `{ start: Date, end: Date }` | `undefined` |
+| `categories` | `string[]` | `[]` |
+| `calendarName` | `string` | `'Calendar'` |
+| `includeRecurring` | `boolean` | `true` |
+| `expandRecurring` | `boolean` | `false` |
+
+## Subscription Object
+
+| Method | Description |
+|--------|-------------|
+| `refresh()` | Force immediate refresh |
+| `stop()` | Pause auto-refresh |
+| `start()` | Resume auto-refresh |
+
+## ValidationResult
+
+```ts
+{ valid: boolean, errors: string[], eventCount: number }
+```

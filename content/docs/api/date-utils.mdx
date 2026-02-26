@@ -1,0 +1,88 @@
+---
+title: DateUtils
+description: API reference for the DateUtils static class.
+---
+
+```js
+import { DateUtils } from '@forcecalendar/core';
+```
+
+All methods are static.
+
+## Boundaries
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `startOfDay` | `(date: Date) => Date` | Midnight |
+| `endOfDay` | `(date: Date) => Date` | 23:59:59.999 |
+| `startOfWeek` | `(date: Date, weekStartsOn?: number) => Date` | Week start |
+| `endOfWeek` | `(date: Date, weekStartsOn?: number) => Date` | Week end |
+| `startOfMonth` | `(date: Date) => Date` | 1st of month |
+| `endOfMonth` | `(date: Date) => Date` | Last of month |
+
+## Arithmetic
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `addDays` | `(date: Date, days: number) => Date` | New date |
+| `addWeeks` | `(date: Date, weeks: number) => Date` | New date |
+| `addMonths` | `(date: Date, months: number) => Date` | New date |
+| `addYears` | `(date: Date, years: number) => Date` | New date |
+
+## Comparisons
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `isToday` | `(date: Date) => boolean` | — |
+| `isPast` | `(date: Date) => boolean` | — |
+| `isFuture` | `(date: Date) => boolean` | — |
+| `isSameDay` | `(a: Date, b: Date) => boolean` | — |
+| `isSameWeek` | `(a: Date, b: Date, weekStartsOn?: number) => boolean` | — |
+| `isSameMonth` | `(a: Date, b: Date) => boolean` | — |
+| `isValidDate` | `(date: any) => boolean` | — |
+
+## Differences
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `differenceInDays` | `(a: Date, b: Date) => number` | Days |
+| `differenceInWeeks` | `(a: Date, b: Date) => number` | Weeks |
+| `differenceInMonths` | `(a: Date, b: Date) => number` | Months |
+
+## Calendar Info
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getWeekNumber` | `(date: Date) => number` | ISO week number |
+| `getDayOfWeek` | `(date: Date) => number` | 0-6 |
+| `getDaysInMonth` | `(year: number, month: number) => number` | Days count |
+| `isLeapYear` | `(year: number) => boolean` | — |
+| `getDateRange` | `(start: Date, end: Date) => Date[]` | Array of dates |
+
+## Formatting
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `format` | `(date: Date, locale?: string, options?: object) => string` | Formatted string |
+| `getMonthName` | `(date: Date, locale?: string, format?: string) => string` | Month name |
+| `getDayName` | `(date: Date, locale?: string, format?: string) => string` | Day name |
+| `formatTime` | `(date: Date, locale?: string, hour12?: boolean) => string` | Time string |
+| `parseTime` | `(timeStr: string) => { hours, minutes }` | Parsed time |
+| `setTime` | `(date: Date, hours: number, minutes: number, seconds?: number) => Date` | New date |
+
+## Strings
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getUTCDateString` | `(date: Date) => string` | `YYYY-MM-DD` (UTC) |
+| `getLocalDateString` | `(date: Date) => string` | `YYYY-MM-DD` (local) |
+
+## Timezone
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `toTimeZone` | `(date: Date, tz: string) => Date` | Converted date |
+| `getTimezoneOffset` | `(date: Date, tz: string) => number` | Minutes offset |
+| `isDST` | `(date: Date, tz: string) => boolean` | — |
+| `addHoursWithDST` | `(date: Date, hours: number, tz: string) => Date` | DST-safe addition |
+| `createInTimeZone` | `(y, m, d, h, min, s, tz) => Date` | Date in timezone |

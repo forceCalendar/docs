@@ -1,0 +1,83 @@
+---
+title: Salesforce Overview
+description: Using forceCalendar in Salesforce Lightning with LWC, Apex, and Locker Service.
+---
+
+## Architecture
+
+The Salesforce integration wraps `@forcecalendar/interface` in a Lightning Web Component (LWC) with an Apex controller for CRUD operations against the Salesforce `Event` standard object.
+
+```
+┌─────────────────────────────────────┐
+│  Lightning App Builder Page         │
+│  ┌───────────────────────────────┐  │
+│  │  c-force-calendar (LWC)      │  │
+│  │  ┌─────────────────────────┐  │  │
+│  │  │  forcecal-main          │  │  │
+│  │  │  (Web Component)        │  │  │
+│  │  └─────────────────────────┘  │  │
+│  │         ↕ DOM events          │  │
+│  │  ┌─────────────────────────┐  │  │
+│  │  │  @wire(getEvents)       │  │  │
+│  │  │  Apex imperative calls  │  │  │
+│  │  └─────────────────────────┘  │  │
+│  └───────────────────────────────┘  │
+│              ↕ Apex                  │
+│  ┌───────────────────────────────┐  │
+│  │  ForceCalendarController.cls │  │
+│  │  (WITH SECURITY_ENFORCED)    │  │
+│  └───────────────────────────────┘  │
+│              ↕ SOQL                  │
+│  ┌───────────────────────────────┐  │
+│  │  Event (Standard Object)     │  │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
+```
+
+## Components
+
+### c-force-calendar (LWC)
+
+The Lightning Web Component wrapper. Handles:
+
+- `@wire` integration for reactive event loading
+- Dynamic `forcecal-main` element creation (bypasses static module analysis)
+- Event CRUD via imperative Apex calls
+- SLDS-styled error display with retry
+- Loading spinner
+- Refresh button
+
+### ForceCalendarController.cls
+
+Apex controller with `with sharing` (respects sharing rules). Methods:
+
+| Method | Access | Description |
+|--------|--------|-------------|
+| `getEvents(start, end, recordId)` | `@AuraEnabled(cacheable=true)` | Query events in date range |
+| `createEvent(title, start, end, ...)` | `@AuraEnabled` | Create a new event |
+| `updateEvent(eventId, title, start, ...)` | `@AuraEnabled` | Update an existing event |
+| `deleteEvent(eventId)` | `@AuraEnabled` | Delete an event |
+
+All methods use `WITH SECURITY_ENFORCED` in SOQL and check `isCreateable()`, `isUpdateable()`, `isDeletable()` on the `Event` SObject.
+
+### forcecal-main
+
+The `@forcecalendar/interface` Web Component, deployed as a static resource and instantiated dynamically inside the LWC's `lwc:dom="manual"` container.
+
+## Quick Start
+
+```html
+<!-- In a Lightning component or app page -->
+<c-force-calendar
+  current-view="month"
+  record-id={recordId}
+  height="600px"
+></c-force-calendar>
+```
+
+The component automatically:
+1. Loads events from Salesforce via `@wire`
+2. Creates the `forcecal-main` element in `renderedCallback`
+3. Handles navigation and CRUD via Apex
+4. Shows SLDS spinner during loading
+5. Shows error messages with retry button on failure

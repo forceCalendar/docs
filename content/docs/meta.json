@@ -1,0 +1,18 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "quick-start",
+    "installation",
+    "---Core Package---",
+    "core",
+    "---Interface Package---",
+    "interface",
+    "---Salesforce---",
+    "salesforce",
+    "---Security---",
+    "security",
+    "---API Reference---",
+    "api"
+  ]
+}

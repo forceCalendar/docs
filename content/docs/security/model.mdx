@@ -1,0 +1,168 @@
+---
+title: Security Model
+description: Detailed security model -- input validation, output encoding, and trust boundaries.
+---
+
+## Trust Boundaries
+
+```
+┌─────────────────────────────────────────┐
+│  Untrusted Input                        │
+│  ┌─────────────────────────────────┐    │
+│  │ User Input (event data, search) │    │
+│  │ External ICS files              │    │
+│  │ URL parameters                  │    │
+│  │ Theme CSS values                │    │
+│  └─────────┬───────────────────────┘    │
+│            │ Validation Layer            │
+│            ▼                             │
+│  ┌─────────────────────────────────┐    │
+│  │ Event.validate()                │    │
+│  │ Event.normalize()               │    │
+│  │ RRuleParser.parse()             │    │
+│  │ ICSParser.parse()               │    │
+│  │ StateManager (key stripping)    │    │
+│  │ StyleUtils.sanitizeColor()      │    │
+│  └─────────┬───────────────────────┘    │
+│            │ Trusted Internal State      │
+│            ▼                             │
+│  ┌─────────────────────────────────┐    │
+│  │ Calendar, EventStore, etc.      │    │
+│  └─────────┬───────────────────────┘    │
+│            │ Output Encoding             │
+│            ▼                             │
+│  ┌─────────────────────────────────┐    │
+│  │ textContent (no innerHTML)      │    │
+│  │ CSS custom properties           │    │
+│  │ CustomEvent dispatch            │    │
+│  └─────────────────────────────────┘    │
+└─────────────────────────────────────────┘
+```
+
+## Input Validation Details
+
+### Event Data
+
+`Event.validate()` checks:
+
+| Check | Rule |
+|-------|------|
+| Title | Non-empty string |
+| Start | Valid Date (not NaN) |
+| End | Valid Date (not NaN) |
+| End > Start | End must be after start (unless allDay) |
+| Status | Must be `'confirmed'`, `'tentative'`, or `'cancelled'` |
+| Visibility | Must be `'public'`, `'private'`, or `'confidential'` |
+
+`Event.normalize()` applies safe defaults:
+
+| Field | Default |
+|-------|---------|
+| `id` | `'evt_' + random hex` |
+| `title` | `'Untitled Event'` |
+| `end` | `start + 1 hour` |
+| `color` | `'#4285f4'` |
+| `status` | `'confirmed'` |
+| `visibility` | `'public'` |
+
+### RRULE Strings
+
+`RRuleParser.parse()` validates:
+
+- Frequency must be one of the 7 RFC 5545 values (defaults to `'DAILY'` if invalid)
+- Interval minimum is 1
+- COUNT and UNTIL are mutually exclusive (throws if both present)
+- BYMONTH clamped to 1-12
+- BYMONTHDAY clamped to -31 to 31, excluding 0
+- BYWEEKNO clamped to -53 to 53, excluding 0
+- BYYEARDAY clamped to -366 to 366, excluding 0
+- BYDAY must match valid weekday codes (SU, MO, TU, WE, TH, FR, SA)
+
+### ICS Data
+
+The ICS parser handles:
+
+- Line unfolding (RFC 5545 continuation lines)
+- Text unescaping (`\\n` to newline, `\\,` to comma)
+- Multiple date format parsing with validation
+- Graceful handling of unknown properties (ignored, not thrown)
+
+### State Updates
+
+`StateManager.setState()`:
+
+1. Strips `__proto__`, `constructor`, `prototype` from updates object
+2. Shallow-merges nested objects (`filters`, `businessHours`, `metadata`)
+3. Deep-equality checks to prevent no-op state transitions
+4. Deep-clones state before adding to undo/redo history
+
+### CSS Values
+
+`StyleUtils.sanitizeColor()` rejects:
+
+- Values containing `url(`
+- Values containing `expression(`
+- Values containing semicolons (multi-statement injection)
+- Values containing `javascript:` protocol
+- Empty or whitespace-only values
+
+## Output Encoding
+
+### DOM Rendering
+
+All view renderers use safe DOM APIs:
+
+```js
+// Safe: textContent escapes HTML entities
+element.textContent = event.title;
+
+// Safe: setAttribute escapes attribute values
+element.setAttribute('data-id', event.id);
+
+// Safe: createElement creates a typed element
+const div = document.createElement('div');
+```
+
+No renderer uses `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`.
+
+### Custom Events
+
+Events dispatched by Web Components use `CustomEvent` with structured data:
+
+```js
+new CustomEvent('calendar-event-added', {
+  detail: { event: event.toObject() },
+  bubbles: true,
+  composed: true,
+});
+```
+
+The `detail` property contains serialized data (via `toObject()`), never DOM references or executable code.
+
+## Rate Limiting and Resource Limits
+
+### Recurrence Expansion
+
+`RecurrenceEngine.expandEvent()` has a `maxOccurrences` parameter (default 365) that caps the number of occurrences generated. This prevents denial-of-service from rules like `FREQ=SECONDLY` or unbounded `FREQ=DAILY`.
+
+### Memory Management
+
+`AdaptiveMemoryManager` monitors memory usage:
+
+- **Warning threshold (80%)**: Reduces cache sizes by 25%
+- **Critical threshold (95%)**: Emergency clears all caches
+
+### History Limits
+
+`StateManager` limits undo/redo history to 50 entries. Older entries are discarded to prevent unbounded memory growth.
+
+### Cache Limits
+
+All LRU caches have fixed maximum sizes:
+
+| Cache | Default Max Size |
+|-------|-----------------|
+| Event cache | 500 |
+| Query cache | 100 |
+| Date range cache | 50 |
+| Occurrence cache (V2) | 100 |

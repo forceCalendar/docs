@@ -1,0 +1,165 @@
+---
+title: EventBus
+description: Cross-component event communication with wildcards, priority, and one-time subscriptions.
+---
+
+## Overview
+
+`EventBus` provides a publish/subscribe system for communication between forceCalendar components. It supports wildcard patterns, priority-based handler ordering, and one-time subscriptions.
+
+A singleton instance (`eventBus`) is shared across all components.
+
+```js
+import { eventBus, EventBus } from '@forcecalendar/interface';
+
+// Use the singleton
+eventBus.on('navigation:*', (data) => {
+  console.log('Navigation event:', data);
+});
+
+// Or create a new instance
+const bus = new EventBus();
+```
+
+## Subscribing
+
+### on(eventName, handler, options?)
+
+Subscribe to an event. Returns `void`.
+
+```js
+eventBus.on('event:added', (data) => {
+  console.log('Event added:', data);
+});
+
+// With options
+eventBus.on('event:added', handler, {
+  priority: 10,  // Higher priority = called first (default: 0)
+});
+```
+
+### once(eventName, handler, options?)
+
+Subscribe to an event for a single invocation. The handler is automatically removed after it fires once.
+
+```js
+eventBus.once('calendar:ready', (data) => {
+  console.log('Calendar initialized');
+});
+```
+
+## Wildcard Patterns
+
+Event names use colon-separated namespaces. Wildcards match any segment:
+
+```js
+// Match all navigation events
+eventBus.on('navigation:*', handler);
+// Matches: navigation:next, navigation:previous, navigation:today
+
+// Match all events in any namespace
+eventBus.on('*', handler);
+// Matches everything
+```
+
+### Pattern Matching Rules
+
+| Pattern | Matches | Does Not Match |
+|---------|---------|----------------|
+| `event:added` | `event:added` only | `event:updated`, `event:*` |
+| `event:*` | `event:added`, `event:updated`, `event:removed` | `navigation:next` |
+| `*` | Everything | — |
+
+Wildcard handlers are stored separately from exact-match handlers. When an event fires, both the exact-match handlers and any matching wildcard handlers are invoked.
+
+## Emitting
+
+### emit(eventName, data?)
+
+Emit an event to all matching subscribers.
+
+```js
+eventBus.emit('navigation:next', { date: new Date(), view: 'month' });
+```
+
+Handler invocation order:
+1. Exact-match handlers, sorted by priority (highest first)
+2. Wildcard handlers, sorted by priority (highest first)
+
+## Unsubscribing
+
+### off(eventName, handler)
+
+Remove a specific handler for an event.
+
+```js
+eventBus.off('event:added', myHandler);
+```
+
+### offWildcard(pattern, handler)
+
+Remove a specific wildcard handler.
+
+```js
+eventBus.offWildcard('navigation:*', myHandler);
+```
+
+### offAll(eventName)
+
+Remove all handlers for an event.
+
+```js
+eventBus.offAll('event:added');
+```
+
+### clear()
+
+Remove all handlers for all events.
+
+```js
+eventBus.clear();
+```
+
+## Introspection
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getEventNames()` | `string[]` | All registered event names |
+| `getHandlerCount(eventName)` | `number` | Number of handlers for an event |
+| `getWildcardHandlerCount(pattern)` | `number` | Number of wildcard handlers |
+| `getTotalHandlerCount()` | `number` | Total handlers across all events |
+
+## Internal Event Names
+
+These events are used internally by forceCalendar components:
+
+| Event | Emitted By | Data |
+|-------|-----------|------|
+| `navigation:next` | ForceCalendar | `{ date, view }` |
+| `navigation:previous` | ForceCalendar | `{ date, view }` |
+| `navigation:today` | ForceCalendar | `{ date, view }` |
+| `view:change` | ForceCalendar | `{ view }` |
+| `event:added` | ForceCalendar | `{ event }` |
+| `event:updated` | ForceCalendar | `{ event }` |
+| `event:removed` | ForceCalendar | `{ eventId }` |
+| `date:select` | MonthViewRenderer | `{ date }` |
+| `event:select` | Renderers | `{ eventId }` |
+
+## Priority Example
+
+```js
+// Low priority - runs last
+eventBus.on('event:added', (data) => {
+  logToAnalytics(data);
+}, { priority: -10 });
+
+// Default priority (0)
+eventBus.on('event:added', (data) => {
+  updateUI(data);
+});
+
+// High priority - runs first
+eventBus.on('event:added', (data) => {
+  validateEvent(data);
+}, { priority: 10 });
+```

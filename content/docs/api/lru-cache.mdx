@@ -1,0 +1,47 @@
+---
+title: LRUCache
+description: API reference for the LRUCache class.
+---
+
+```js
+import { LRUCache } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new LRUCache(maxSize: number)
+```
+
+## Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `get` | `(key: string) => any \| undefined` | Value (moves to most-recent) |
+| `put` | `(key: string, value: any) => void` | — |
+| `has` | `(key: string) => boolean` | — |
+| `delete` | `(key: string) => boolean` | — |
+| `clear` | `() => void` | — |
+| `keys` | `() => Iterator<string>` | Key iterator |
+| `getStats` | `() => CacheStats` | Statistics |
+
+## CacheStats
+
+```ts
+interface CacheStats {
+  size: number;
+  maxSize: number;
+  hits: number;
+  misses: number;
+  evictions: number;
+  hitRate: number;
+}
+```
+
+## Implementation
+
+Uses JavaScript `Map` insertion order semantics for O(1) operations:
+
+- `get()`: Delete and re-insert to move to end (most recent)
+- `put()`: Insert at end; if over capacity, delete first entry (least recent)
+- All operations are O(1) amortized

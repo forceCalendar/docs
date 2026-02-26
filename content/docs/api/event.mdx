@@ -1,0 +1,94 @@
+---
+title: Event
+description: API reference for the Event class.
+---
+
+```js
+import { Event } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new Event(data: EventData)
+```
+
+See [Event Model](/docs/core/event) for the full list of constructor properties.
+
+## Static Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `normalize` | `(data: object) => EventData` | Normalized event data |
+| `validate` | `(data: object) => { valid: boolean, errors: string[] }` | Validation result |
+| `fromObject` | `(obj: object) => Event` | Event instance |
+
+## Getters
+
+| Getter | Type | Description |
+|--------|------|-------------|
+| `duration` | `number` | Duration in milliseconds |
+| `durationMinutes` | `number` | Duration in minutes |
+| `durationHours` | `number` | Duration in hours (decimal) |
+| `isMultiDay` | `boolean` | Spans midnight |
+| `isCancelled` | `boolean` | Status is cancelled |
+| `isTentative` | `boolean` | Status is tentative |
+| `isConfirmed` | `boolean` | Status is confirmed |
+| `isPrivate` | `boolean` | Visibility is private |
+| `isPublic` | `boolean` | Visibility is public |
+| `hasAttendees` | `boolean` | Has attendees |
+| `hasReminders` | `boolean` | Has reminders |
+| `isMeeting` | `boolean` | Has attendees |
+| `isVirtual` | `boolean` | Has conference data |
+| `category` | `string \| null` | Primary category |
+
+## Instance Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `isRecurring` | `() => boolean` | Has recurrence rule |
+| `occursOn` | `(date: Date) => boolean` | Occurs on date |
+| `overlaps` | `(other: Event) => boolean` | Time overlap |
+| `contains` | `(datetime: Date) => boolean` | Contains datetime |
+| `clone` | `(updates?: object) => Event` | Cloned event |
+| `toObject` | `() => object` | Plain object |
+| `equals` | `(other: Event) => boolean` | Deep equality |
+
+## Timezone Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getStartInTimezone` | `(tz: string) => Date` | Start in timezone |
+| `getEndInTimezone` | `(tz: string) => Date` | End in timezone |
+| `updateTimes` | `(start: Date, end: Date, tz?: string) => void` | — |
+
+## Attendee Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `addAttendee` | `(attendee: object) => void` | — |
+| `removeAttendee` | `(email: string) => void` | — |
+| `updateAttendeeResponse` | `(email: string, status: string) => void` | — |
+| `getAttendee` | `(email: string) => object \| undefined` | Attendee |
+| `hasAttendee` | `(email: string) => boolean` | — |
+| `getAttendeesByStatus` | `(status: string) => object[]` | Attendees |
+| `getAttendeeCounts` | `() => object` | `{ total, accepted, declined, ... }` |
+
+## Reminder Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `addReminder` | `(reminder: object) => void` | — |
+| `removeReminder` | `(index: number) => void` | — |
+| `getActiveReminders` | `() => object[]` | Active reminders |
+| `getReminderTriggerTimes` | `() => Date[]` | Trigger dates |
+
+## Category Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `addCategory` | `(category: string) => void` | — |
+| `removeCategory` | `(category: string) => void` | — |
+| `hasCategory` | `(category: string) => boolean` | — |
+| `hasAnyCategory` | `(categories: string[]) => boolean` | — |
+| `hasAllCategories` | `(categories: string[]) => boolean` | — |

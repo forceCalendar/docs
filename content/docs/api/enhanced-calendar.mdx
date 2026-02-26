@@ -1,0 +1,62 @@
+---
+title: EnhancedCalendar
+description: API reference for the EnhancedCalendar class.
+---
+
+```js
+import { EnhancedCalendar } from '@forcecalendar/core';
+```
+
+Extends [Calendar](/docs/api/calendar). Inherits all Calendar methods.
+
+## Constructor
+
+```ts
+new EnhancedCalendar(config?: CalendarConfig)
+```
+
+Same constructor parameters as Calendar.
+
+## Search Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `search` | `(query: string, options?: SearchOptions) => Promise<SearchResult[]>` | Search results |
+| `advancedSearch` | `(query: string, filters?: object, options?: SearchOptions) => Promise<SearchResult[]>` | Filtered search results |
+| `getSuggestions` | `(partial: string, field?: string) => Promise<string[]>` | Autocomplete suggestions |
+
+### SearchOptions
+
+| Option | Type | Default |
+|--------|------|---------|
+| `fields` | `string[]` | `['title', 'description', 'location']` |
+| `fuzzy` | `boolean` | `false` |
+| `limit` | `number` | `50` |
+
+## Enhanced Recurrence
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getEventsInRange` | `(start: Date, end: Date, options?: object) => Event[]` | Events with enhanced recurrence |
+| `modifyOccurrence` | `(eventId: string, date: Date, mods: object) => void` | — |
+| `cancelOccurrence` | `(eventId: string, date: Date, reason?: string) => void` | — |
+| `bulkModifyOccurrences` | `(eventId: string, range: object, mods: object) => void` | — |
+
+## Import/Export
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `exportWithRecurrence` | `(format: string) => string` | Exported data |
+| `importWithRecurrence` | `(data: string, format: string) => void` | — |
+
+## Performance
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getPerformanceStats` | `() => object` | Performance metrics |
+
+## Lifecycle
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `destroy` | `() => void` | — |

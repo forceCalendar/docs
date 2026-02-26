@@ -1,0 +1,227 @@
+---
+title: Web Components
+description: The forcecal-main custom element -- attributes, API, events, and lifecycle.
+---
+
+## forcecal-main
+
+The primary Web Component. Renders a full calendar with header navigation, view switching, and event display.
+
+```html
+<forcecal-main
+  view="month"
+  date="2026-03-01"
+  locale="en-US"
+  timezone="America/New_York"
+  week-starts-on="0"
+  height="600px"
+></forcecal-main>
+```
+
+## Observed Attributes
+
+These HTML attributes are reactive -- changes trigger re-renders.
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `view` | `string` | `'month'` | `'month'`, `'week'`, `'day'` |
+| `date` | `string` | Today | ISO date string |
+| `locale` | `string` | `'en-US'` | BCP 47 locale |
+| `timezone` | `string` | System | IANA timezone |
+| `week-starts-on` | `string` | `'0'` | 0=Sunday, 1=Monday |
+| `height` | `string` | `'auto'` | CSS height value |
+
+```js
+const el = document.querySelector('forcecal-main');
+el.setAttribute('view', 'week');
+el.setAttribute('timezone', 'Asia/Tokyo');
+```
+
+## JavaScript API
+
+### addEvent(eventData)
+
+```js
+el.addEvent({
+  title: 'Meeting',
+  start: new Date('2026-03-01T10:00:00'),
+  end: new Date('2026-03-01T11:00:00'),
+});
+```
+
+### updateEvent(eventId, updates)
+
+```js
+el.updateEvent('evt_123', { title: 'Updated Meeting' });
+```
+
+### deleteEvent(eventId)
+
+```js
+el.deleteEvent('evt_123');
+```
+
+### getEvents()
+
+Returns all events from the internal calendar instance.
+
+### setView(viewType)
+
+```js
+el.setView('week');
+```
+
+### setDate(date)
+
+```js
+el.setDate(new Date('2026-06-15'));
+```
+
+### next()
+
+Navigate to the next period.
+
+### previous()
+
+Navigate to the previous period.
+
+### today()
+
+Navigate to today.
+
+## Custom Events
+
+The component dispatches these `CustomEvent`s with `bubbles: true` and `composed: true` (crosses Shadow DOM boundaries).
+
+| Event | `detail` | When |
+|-------|----------|------|
+| `calendar-navigate` | `{ date, view, direction }` | Navigation occurs |
+| `calendar-view-change` | `{ view }` | View type changes |
+| `calendar-event-add` | `{ event }` | Event creation requested |
+| `calendar-event-update` | `{ eventId, updates }` | Event update requested |
+| `calendar-event-remove` | `{ eventId }` | Event deletion requested |
+| `calendar-event-added` | `{ event }` | Event was added |
+| `calendar-event-updated` | `{ event }` | Event was updated |
+| `calendar-event-deleted` | `{ eventId }` | Event was deleted |
+| `calendar-date-select` | `{ date }` | Date cell clicked |
+
+```js
+el.addEventListener('calendar-event-added', (e) => {
+  console.log('Event created:', e.detail.event);
+});
+
+el.addEventListener('calendar-date-select', (e) => {
+  console.log('Date selected:', e.detail.date);
+});
+```
+
+## Template Structure
+
+The component renders this internal structure inside its Shadow DOM:
+
+```
+<div class="fc-calendar">
+  <div class="fc-header">
+    <button class="fc-today-btn">Today</button>
+    <button class="fc-prev-btn">&lt;</button>
+    <button class="fc-next-btn">&gt;</button>
+    <h2 class="fc-title">March 2026</h2>
+    <button class="fc-new-event-btn">+ New Event</button>
+    <div class="fc-view-switcher">
+      <button>Month</button>
+      <button>Week</button>
+      <button>Day</button>
+    </div>
+  </div>
+  <div class="fc-body">
+    <!-- View renderer output -->
+  </div>
+</div>
+```
+
+## BaseComponent
+
+All Web Components extend `BaseComponent`, which provides:
+
+### Lifecycle
+
+| Method | Called When |
+|--------|-----------|
+| `initialize()` | Component first connected to DOM |
+| `mount()` | After initialization |
+| `render()` | When state changes require a re-render |
+| `afterRender()` | After render completes |
+| `unmount()` | Component disconnected from DOM |
+| `cleanup()` | Final cleanup (remove listeners) |
+
+### State Management
+
+```js
+// Inside a component
+this.setState({ loading: true });
+const state = this.getState();
+```
+
+### Properties
+
+```js
+this.setProp('locale', 'en-US');
+const locale = this.getProp('locale');
+```
+
+### DOM Helpers
+
+```js
+// Query within shadow root
+const btn = this.$('.fc-today-btn');
+const allBtns = this.$$('.fc-btn');
+```
+
+### Event Emission
+
+```js
+// Emit a custom event that crosses shadow DOM boundaries
+this.emit('calendar-navigate', { date: new Date(), view: 'month' });
+```
+
+### Listener Management
+
+Listeners registered via `addListener()` are automatically cleaned up on disconnect:
+
+```js
+this.addListener(this.$('.fc-prev-btn'), 'click', () => this.previous());
+```
+
+### Re-render Preservation
+
+`BaseComponent` preserves scroll positions and focus across re-renders. Before rendering, it saves the current scroll position and active element reference. After rendering, it restores both.
+
+## View Renderers
+
+Each view has a dedicated renderer that produces DOM content:
+
+### MonthViewRenderer
+
+Renders a grid of weeks. Each day cell shows up to 3 events with a "+N more" overflow indicator.
+
+- Pure JS rendering (no innerHTML) for Locker Service compatibility
+- Respects `weekStartsOn` configuration
+- Highlights today and selected date
+- Shows week numbers when enabled
+
+### WeekViewRenderer
+
+Renders a 7-day timeline with hourly slots.
+
+- All-day events displayed in a header row
+- Timed events positioned based on start/end times
+- Business hours highlighted
+- Overlap groups handled via `calculateEventPositions()`
+
+### DayViewRenderer
+
+Renders a single-day timeline with hourly slots.
+
+- Same layout principles as WeekViewRenderer
+- More detail per event (full title, time, location)
+- All-day events in header

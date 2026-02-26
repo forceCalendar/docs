@@ -1,0 +1,246 @@
+---
+title: DateUtils
+description: Static date utility methods for calculations, formatting, and timezone operations.
+---
+
+## Overview
+
+`DateUtils` is a static utility class providing date calculations, formatting, comparisons, and timezone operations. All methods are static -- there is no constructor or instance state.
+
+```js
+import { DateUtils } from '@forcecalendar/core';
+
+const start = DateUtils.startOfWeek(new Date(), 1); // Monday start
+```
+
+## Date Boundaries
+
+### startOfDay(date)
+
+Returns a new Date set to midnight (00:00:00.000) of the given date.
+
+### endOfDay(date)
+
+Returns a new Date set to 23:59:59.999 of the given date.
+
+### startOfWeek(date, weekStartsOn?)
+
+Returns the start of the week containing the given date. `weekStartsOn` defaults to 0 (Sunday).
+
+```js
+DateUtils.startOfWeek(new Date('2026-03-04'), 1); // Monday March 2
+```
+
+### endOfWeek(date, weekStartsOn?)
+
+Returns the end of the week (Saturday 23:59:59.999 for Sunday start).
+
+### startOfMonth(date)
+
+Returns the first day of the month at midnight.
+
+### endOfMonth(date)
+
+Returns the last day of the month at 23:59:59.999.
+
+## Arithmetic
+
+### addDays(date, days)
+
+```js
+DateUtils.addDays(new Date('2026-03-01'), 7); // March 8
+DateUtils.addDays(new Date('2026-03-01'), -1); // February 28
+```
+
+### addWeeks(date, weeks)
+
+### addMonths(date, months)
+
+Handles month-end clamping: adding 1 month to January 31 yields February 28 (or 29 in leap years).
+
+### addYears(date, years)
+
+## Comparisons
+
+### isToday(date)
+
+Returns `true` if the date is today (local time).
+
+### isPast(date)
+
+Returns `true` if the date is before the current moment.
+
+### isFuture(date)
+
+Returns `true` if the date is after the current moment.
+
+### isSameDay(date1, date2)
+
+Returns `true` if both dates fall on the same calendar day.
+
+### isSameWeek(date1, date2, weekStartsOn?)
+
+Returns `true` if both dates fall in the same week.
+
+### isSameMonth(date1, date2)
+
+Returns `true` if both dates fall in the same month and year.
+
+### isValidDate(date)
+
+Returns `true` if the value is a valid Date object (not `NaN`).
+
+## Differences
+
+### differenceInDays(date1, date2)
+
+Returns the number of full days between two dates (always positive).
+
+```js
+DateUtils.differenceInDays(
+  new Date('2026-03-10'),
+  new Date('2026-03-01')
+); // 9
+```
+
+### differenceInWeeks(date1, date2)
+
+Returns the number of full weeks between two dates.
+
+### differenceInMonths(date1, date2)
+
+Returns the number of full months between two dates.
+
+## Calendar Information
+
+### getWeekNumber(date)
+
+Returns the ISO 8601 week number (1-53).
+
+```js
+DateUtils.getWeekNumber(new Date('2026-01-01')); // 1
+```
+
+### getDayOfWeek(date)
+
+Returns the day of week (0=Sunday, 6=Saturday).
+
+### getDaysInMonth(year, month)
+
+Returns the number of days in a month (1-indexed month).
+
+```js
+DateUtils.getDaysInMonth(2026, 2); // 28
+DateUtils.getDaysInMonth(2024, 2); // 29 (leap year)
+```
+
+### isLeapYear(year)
+
+Returns `true` if the year is a leap year.
+
+### getDateRange(start, end)
+
+Returns an array of Date objects for each day in the range (inclusive).
+
+```js
+const days = DateUtils.getDateRange(
+  new Date('2026-03-01'),
+  new Date('2026-03-07')
+);
+// Array of 7 Date objects
+```
+
+## Formatting
+
+### format(date, locale?, options?)
+
+Format a date using `Intl.DateTimeFormat`.
+
+```js
+DateUtils.format(new Date(), 'en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+// 'Sunday, March 1, 2026'
+```
+
+### getMonthName(date, locale?, format?)
+
+Get the month name. `format` can be `'long'`, `'short'`, or `'narrow'`.
+
+```js
+DateUtils.getMonthName(new Date('2026-03-01'), 'en-US', 'long'); // 'March'
+DateUtils.getMonthName(new Date('2026-03-01'), 'en-US', 'short'); // 'Mar'
+```
+
+### getDayName(date, locale?, format?)
+
+Get the day of week name.
+
+### formatTime(date, locale?, hour12?)
+
+Format just the time portion.
+
+```js
+DateUtils.formatTime(new Date(), 'en-US', true);  // '9:00 AM'
+DateUtils.formatTime(new Date(), 'en-US', false); // '09:00'
+```
+
+### parseTime(timeStr)
+
+Parse a time string like `'09:30'` or `'2:00 PM'` into hours and minutes.
+
+```js
+DateUtils.parseTime('09:30');  // { hours: 9, minutes: 30 }
+DateUtils.parseTime('2:00 PM'); // { hours: 14, minutes: 0 }
+```
+
+### setTime(date, hours, minutes, seconds?)
+
+Set the time on a date while preserving the calendar date.
+
+## Date Strings
+
+### getUTCDateString(date)
+
+Returns a UTC date string in `YYYY-MM-DD` format.
+
+### getLocalDateString(date)
+
+Returns a local date string in `YYYY-MM-DD` format.
+
+## Timezone Operations
+
+### toTimeZone(date, timezone)
+
+Convert a date to a specific timezone using `Intl.DateTimeFormat`.
+
+```js
+const tokyoTime = DateUtils.toTimeZone(new Date(), 'Asia/Tokyo');
+```
+
+### getTimezoneOffset(date, timezone)
+
+Get the UTC offset in minutes for a timezone at a specific point in time.
+
+### isDST(date, timezone)
+
+Returns `true` if DST is in effect for the given timezone at the given date.
+
+### addHoursWithDST(date, hours, timezone)
+
+Add hours while correctly handling DST transitions. Unlike simple hour addition, this accounts for the clock change.
+
+### createInTimeZone(year, month, day, hours, minutes, seconds, timezone)
+
+Create a Date representing a specific wall-clock time in a timezone.
+
+```js
+const meeting = DateUtils.createInTimeZone(
+  2026, 2, 1,  // March 1, 2026 (0-indexed month)
+  9, 0, 0,     // 09:00:00
+  'America/New_York'
+);
+```

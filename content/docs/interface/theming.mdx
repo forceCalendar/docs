@@ -1,0 +1,192 @@
+---
+title: Theming
+description: CSS custom property theming system with full variable reference.
+---
+
+## Overview
+
+forceCalendar uses CSS custom properties (CSS variables) for theming. All variables use the `--fc-` prefix. Because components use Shadow DOM, theme variables must be set on the host element or inherited from a parent.
+
+```css
+forcecal-main {
+  --fc-primary: #1a73e8;
+  --fc-bg: #ffffff;
+  --fc-text: #202124;
+  --fc-font-family: 'Inter', sans-serif;
+}
+```
+
+## StyleUtils
+
+The `StyleUtils` class provides programmatic access to the theming system.
+
+```js
+import { StyleUtils } from '@forcecalendar/interface';
+```
+
+### setCSSVariables(element, variables)
+
+Set multiple CSS variables on an element.
+
+```js
+StyleUtils.setCSSVariables(calendarEl, {
+  '--fc-primary': '#1a73e8',
+  '--fc-bg': '#1e1e1e',
+  '--fc-text': '#e0e0e0',
+});
+```
+
+### getCSSVariable(element, name)
+
+Read a CSS variable value.
+
+```js
+const primary = StyleUtils.getCSSVariable(calendarEl, '--fc-primary');
+```
+
+### Color Utilities
+
+```js
+StyleUtils.darken('#4285f4', 0.2);     // Darken by 20%
+StyleUtils.lighten('#4285f4', 0.2);    // Lighten by 20%
+StyleUtils.getContrastColor('#4285f4'); // Returns '#ffffff' or '#000000'
+StyleUtils.hexToRgba('#4285f4', 0.5);  // 'rgba(66, 133, 244, 0.5)'
+```
+
+### sanitizeColor(value)
+
+Validates and sanitizes a CSS color value to prevent CSS injection. Strips anything that could be used for injection (e.g., `url()`, `expression()`).
+
+```js
+StyleUtils.sanitizeColor('#4285f4');                    // '#4285f4'
+StyleUtils.sanitizeColor('url(evil)');                  // '' (rejected)
+StyleUtils.sanitizeColor('red; background: url(evil)'); // '' (rejected)
+```
+
+## CSS Variable Reference
+
+### Colors
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-primary` | `#4285f4` | Primary accent color |
+| `--fc-primary-hover` | `#3367d6` | Primary hover state |
+| `--fc-primary-light` | `#e8f0fe` | Light primary for backgrounds |
+| `--fc-bg` | `#ffffff` | Main background |
+| `--fc-bg-secondary` | `#f8f9fa` | Secondary background |
+| `--fc-bg-hover` | `#f1f3f4` | Hover background |
+| `--fc-bg-selected` | `#e8f0fe` | Selected item background |
+| `--fc-text` | `#202124` | Primary text color |
+| `--fc-text-secondary` | `#5f6368` | Secondary text |
+| `--fc-text-disabled` | `#80868b` | Disabled text |
+| `--fc-text-on-primary` | `#ffffff` | Text on primary color |
+| `--fc-border` | `#dadce0` | Border color |
+| `--fc-border-light` | `#e8eaed` | Light border |
+| `--fc-today-bg` | `#e8f0fe` | Today highlight background |
+| `--fc-today-text` | `#1a73e8` | Today text color |
+| `--fc-weekend-bg` | `#f8f9fa` | Weekend column background |
+| `--fc-event-default-bg` | `#4285f4` | Default event background |
+| `--fc-event-default-text` | `#ffffff` | Default event text |
+| `--fc-event-default-border` | `#3367d6` | Default event border |
+
+### Typography
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-font-family` | `system-ui, sans-serif` | Font family |
+| `--fc-font-size-sm` | `0.75rem` | Small text |
+| `--fc-font-size-base` | `0.875rem` | Base text |
+| `--fc-font-size-lg` | `1rem` | Large text |
+| `--fc-font-size-xl` | `1.25rem` | Extra large |
+| `--fc-font-weight-normal` | `400` | Normal weight |
+| `--fc-font-weight-medium` | `500` | Medium weight |
+| `--fc-font-weight-bold` | `600` | Bold weight |
+| `--fc-line-height` | `1.5` | Line height |
+
+### Spacing
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-spacing-xs` | `0.25rem` | Extra small |
+| `--fc-spacing-sm` | `0.5rem` | Small |
+| `--fc-spacing-md` | `0.75rem` | Medium |
+| `--fc-spacing-lg` | `1rem` | Large |
+| `--fc-spacing-xl` | `1.5rem` | Extra large |
+
+### Borders
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-border-radius` | `4px` | Standard radius |
+| `--fc-border-radius-lg` | `8px` | Large radius |
+| `--fc-border-width` | `1px` | Border width |
+
+### Shadows
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-shadow-sm` | `0 1px 2px rgba(0,0,0,0.1)` | Small shadow |
+| `--fc-shadow-md` | `0 2px 4px rgba(0,0,0,0.12)` | Medium shadow |
+| `--fc-shadow-lg` | `0 4px 8px rgba(0,0,0,0.15)` | Large shadow |
+
+### Transitions
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-transition-fast` | `0.1s ease` | Fast transition |
+| `--fc-transition-normal` | `0.2s ease` | Normal transition |
+| `--fc-transition-slow` | `0.3s ease` | Slow transition |
+
+### Z-Index
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--fc-z-base` | `1` | Base layer |
+| `--fc-z-dropdown` | `100` | Dropdowns |
+| `--fc-z-modal` | `200` | Modals |
+| `--fc-z-tooltip` | `300` | Tooltips |
+
+## Dark Mode Example
+
+```css
+forcecal-main.dark {
+  --fc-bg: #1e1e1e;
+  --fc-bg-secondary: #2d2d2d;
+  --fc-bg-hover: #3d3d3d;
+  --fc-bg-selected: #1a3a5c;
+  --fc-text: #e0e0e0;
+  --fc-text-secondary: #a0a0a0;
+  --fc-text-disabled: #666666;
+  --fc-border: #404040;
+  --fc-border-light: #333333;
+  --fc-today-bg: #1a3a5c;
+  --fc-today-text: #64b5f6;
+  --fc-weekend-bg: #252525;
+  --fc-shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --fc-shadow-md: 0 2px 4px rgba(0,0,0,0.4);
+}
+```
+
+## Responsive Design
+
+```css
+@media (max-width: 768px) {
+  forcecal-main {
+    --fc-font-size-base: 0.75rem;
+    --fc-spacing-md: 0.5rem;
+    --fc-spacing-lg: 0.75rem;
+  }
+}
+```
+
+## Style Functions
+
+`StyleUtils` also provides functions for generating base styles used by components:
+
+| Function | Description |
+|----------|-------------|
+| `getBaseStyles()` | Core layout and typography styles |
+| `getButtonStyles()` | Button component styles |
+| `getGridStyles()` | Month/week/day grid styles |
+| `getAnimations()` | Keyframe animation definitions |
+| `mediaQuery(breakpoint)` | Generate responsive media queries |

@@ -1,0 +1,454 @@
+---
+title: Calendar
+description: The main Calendar class -- view management, navigation, event CRUD, and timezone support.
+---
+
+## Overview
+
+`Calendar` is the primary entry point for `@forcecalendar/core`. It composes an `EventStore`, `StateManager`, and `TimezoneManager` into a unified API for view management, event CRUD, navigation, and timezone operations.
+
+```js
+import { Calendar } from '@forcecalendar/core';
+
+const calendar = new Calendar({
+  view: 'month',
+  date: new Date(),
+  weekStartsOn: 0,
+  locale: 'en-US',
+  timeZone: 'America/New_York',
+});
+```
+
+## Constructor
+
+```js
+new Calendar(config?)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `config.view` | `string` | `'month'` | Initial view: `'month'`, `'week'`, `'day'`, `'list'` |
+| `config.date` | `Date` | `new Date()` | Initial date |
+| `config.weekStartsOn` | `number` | `0` | Week start: 0=Sunday, 1=Monday, ... 6=Saturday |
+| `config.locale` | `string` | `'en-US'` | BCP 47 locale string |
+| `config.timeZone` | `string` | System timezone | IANA timezone identifier |
+| `config.showWeekNumbers` | `boolean` | `false` | Show ISO week numbers |
+| `config.showWeekends` | `boolean` | `true` | Show weekend columns |
+| `config.fixedWeekCount` | `boolean` | `true` | Always show 6 weeks in month view |
+| `config.businessHours` | `object` | `{ start: '09:00', end: '17:00' }` | Business hours range |
+| `config.events` | `Array` | `undefined` | Initial events to load |
+
+The constructor initializes a `TimezoneManager` singleton, creates an `EventStore` and `StateManager` with the given configuration, and loads any initial events.
+
+## View Management
+
+### setView(viewType, date?)
+
+Switch the calendar view. Optionally navigate to a specific date at the same time.
+
+```js
+calendar.setView('week');
+calendar.setView('day', new Date('2026-03-15'));
+```
+
+Valid view types: `'month'`, `'week'`, `'day'`, `'list'`.
+
+Emits: `viewChange` with `{ view, date }`.
+
+### getView()
+
+Returns the current view type as a string.
+
+```js
+const view = calendar.getView(); // 'month'
+```
+
+### getViewData()
+
+Returns a structured object with all the data needed to render the current view. The shape depends on the active view type.
+
+**Month view** returns:
+
+```js
+{
+  title: 'March 2026',
+  year: 2026,
+  month: 2,              // 0-indexed
+  weeks: [               // Array of week arrays
+    [
+      {
+        date: Date,
+        dateString: '2026-03-01',
+        isToday: false,
+        isCurrentMonth: true,
+        isWeekend: false,
+        isSelected: false,
+        events: [Event, ...],
+        weekNumber: 9,    // ISO 8601 week number (if showWeekNumbers)
+      },
+      // ... 7 days per week
+    ],
+    // ... 5-6 weeks
+  ]
+}
+```
+
+**Week view** returns:
+
+```js
+{
+  title: 'Mar 1 - 7, 2026',
+  startDate: Date,
+  endDate: Date,
+  days: [
+    {
+      date: Date,
+      dateString: '2026-03-01',
+      isToday: false,
+      isWeekend: false,
+      dayName: 'Sunday',
+      events: [Event, ...],
+      allDayEvents: [Event, ...],
+    },
+    // ... 7 days
+  ]
+}
+```
+
+**Day view** returns:
+
+```js
+{
+  title: 'Sunday, March 1, 2026',
+  date: Date,
+  dateString: '2026-03-01',
+  isToday: false,
+  events: [Event, ...],
+  allDayEvents: [Event, ...],
+}
+```
+
+## Navigation
+
+### next()
+
+Navigate forward by one period (month, week, or day based on the current view).
+
+```js
+calendar.next();
+```
+
+Emits: `navigate` with `{ date, view, direction: 'next' }`.
+
+### previous()
+
+Navigate backward by one period.
+
+```js
+calendar.previous();
+```
+
+Emits: `navigate` with `{ date, view, direction: 'previous' }`.
+
+### today()
+
+Navigate to the current date.
+
+```js
+calendar.today();
+```
+
+Emits: `navigate` with `{ date, view, direction: 'today' }`.
+
+### goToDate(date)
+
+Navigate to a specific date.
+
+```js
+calendar.goToDate(new Date('2026-06-15'));
+```
+
+Emits: `navigate` with `{ date, view, direction: 'goto' }`.
+
+## Event CRUD
+
+### addEvent(eventData)
+
+Create and store a new event. The `eventData` is normalized through `Event.normalize()` and validated through `Event.validate()` before storage.
+
+```js
+const event = calendar.addEvent({
+  title: 'Sprint Planning',
+  start: new Date('2026-03-02T09:00:00'),
+  end: new Date('2026-03-02T10:00:00'),
+  description: 'Q2 sprint kickoff',
+  location: 'Room 301',
+  color: '#4285f4',
+  categories: ['meeting', 'planning'],
+  attendees: [
+    { email: 'alice@example.com', name: 'Alice', status: 'accepted' },
+    { email: 'bob@example.com', name: 'Bob', status: 'needs-action' },
+  ],
+});
+// Returns the created Event instance
+```
+
+Emits: `eventAdd` with the created `Event`.
+
+### updateEvent(eventId, updates)
+
+Update an existing event by ID.
+
+```js
+calendar.updateEvent('evt_123', {
+  title: 'Updated Sprint Planning',
+  end: new Date('2026-03-02T10:30:00'),
+});
+```
+
+Emits: `eventUpdate` with `{ event, changes }`.
+
+### removeEvent(eventId)
+
+Remove an event by ID.
+
+```js
+calendar.removeEvent('evt_123');
+```
+
+Emits: `eventRemove` with `{ eventId }`.
+
+### getEvent(eventId)
+
+Retrieve a single event by ID. Returns `undefined` if not found.
+
+```js
+const event = calendar.getEvent('evt_123');
+```
+
+### getEvents()
+
+Returns all events as an array.
+
+```js
+const allEvents = calendar.getEvents();
+```
+
+### setEvents(events)
+
+Replace all events. Clears the existing store and loads the provided array.
+
+```js
+calendar.setEvents([
+  { title: 'Event 1', start: new Date(), end: new Date() },
+  { title: 'Event 2', start: new Date(), end: new Date() },
+]);
+```
+
+Emits: `eventsSet`.
+
+### queryEvents(filters)
+
+Query events with structured filters. Delegates to `EventStore.queryEvents()`.
+
+```js
+const results = calendar.queryEvents({
+  start: new Date('2026-03-01'),
+  end: new Date('2026-03-31'),
+  categories: ['meeting'],
+  status: 'confirmed',
+  recurring: true,
+  allDay: false,
+  sort: 'start',
+});
+```
+
+### getEventsForDate(date, timezone?)
+
+Get all events occurring on a specific date. Optionally specify a timezone for the comparison.
+
+```js
+const events = calendar.getEventsForDate(new Date('2026-03-15'));
+const events = calendar.getEventsForDate(new Date(), 'America/Chicago');
+```
+
+### getEventsInRange(start, end, timezone?)
+
+Get all events within a date range. Recurring events are expanded within the range.
+
+```js
+const events = calendar.getEventsInRange(
+  new Date('2026-03-01'),
+  new Date('2026-03-31'),
+  'America/New_York'
+);
+```
+
+## Timezone Operations
+
+### setTimezone(timezone)
+
+Change the calendar's timezone. All date comparisons and view rendering will use the new timezone.
+
+```js
+calendar.setTimezone('Asia/Tokyo');
+```
+
+Emits: `timezoneChange` with `{ timezone, previous }`.
+
+### getTimezone()
+
+Returns the current timezone string.
+
+```js
+const tz = calendar.getTimezone(); // 'America/New_York'
+```
+
+### convertTimezone(date, fromTz, toTz)
+
+Convert a date between timezones.
+
+```js
+const tokyoTime = calendar.convertTimezone(
+  new Date('2026-03-01T09:00:00'),
+  'America/New_York',
+  'Asia/Tokyo'
+);
+```
+
+### toCalendarTimezone(date, fromTz?)
+
+Convert a date to the calendar's configured timezone.
+
+### fromCalendarTimezone(date, toTz?)
+
+Convert a date from the calendar's timezone to another timezone.
+
+### formatInTimezone(date, timezone?, options?)
+
+Format a date in a specific timezone using `Intl.DateTimeFormat`.
+
+### getTimezones()
+
+Returns a list of supported IANA timezone identifiers.
+
+## Selection
+
+### selectEvent(eventId)
+
+Select an event (sets `selectedEventId` in state).
+
+```js
+calendar.selectEvent('evt_123');
+```
+
+Emits: `eventSelect` with `{ eventId }`.
+
+### clearEventSelection()
+
+Clear the current event selection.
+
+Emits: `eventDeselect`.
+
+### selectDate(date)
+
+Select a date (sets `selectedDate` in state).
+
+```js
+calendar.selectDate(new Date('2026-03-15'));
+```
+
+Emits: `dateSelect` with `{ date }`.
+
+### clearDateSelection()
+
+Clear the current date selection.
+
+Emits: `dateDeselect`.
+
+## Conflict Detection
+
+### getOverlapGroups(date?, timezone?)
+
+Get groups of overlapping events, optionally for a specific date.
+
+```js
+const groups = calendar.getOverlapGroups(new Date('2026-03-15'));
+// Returns array of arrays -- each inner array contains events that overlap each other
+```
+
+### calculateEventPositions(date?, timezone?)
+
+Calculate horizontal positioning for overlapping events (for visual rendering in week/day views).
+
+```js
+const positions = calendar.calculateEventPositions(new Date('2026-03-15'));
+// Returns Map<eventId, { left, width, column, totalColumns }>
+```
+
+## Event System
+
+### on(eventName, callback)
+
+Subscribe to calendar events.
+
+```js
+calendar.on('eventAdd', (event) => { /* ... */ });
+```
+
+### off(eventName, callback)
+
+Unsubscribe from calendar events.
+
+```js
+calendar.off('eventAdd', handler);
+```
+
+### Emitted Events
+
+| Event | Payload | When |
+|-------|---------|------|
+| `viewChange` | `{ view, date }` | View type changes |
+| `navigate` | `{ date, view, direction }` | Navigation occurs |
+| `eventAdd` | `Event` | Event is added |
+| `eventUpdate` | `{ event, changes }` | Event is updated |
+| `eventRemove` | `{ eventId }` | Event is removed |
+| `eventsSet` | `{ events }` | All events are replaced |
+| `stateChange` | `{ state }` | Any state change |
+| `eventStoreChange` | `{ type, event? }` | EventStore changes |
+| `timezoneChange` | `{ timezone, previous }` | Timezone changes |
+| `localeChange` | `{ locale }` | Locale changes |
+| `weekStartsOnChange` | `{ weekStartsOn }` | Week start changes |
+| `eventSelect` | `{ eventId }` | Event selected |
+| `eventDeselect` | `{}` | Event deselected |
+| `dateSelect` | `{ date }` | Date selected |
+| `dateDeselect` | `{}` | Date deselected |
+| `destroy` | `{}` | Calendar destroyed |
+
+## Plugins
+
+### use(plugin)
+
+Register a plugin. Plugins are objects with an `install(calendar)` method.
+
+```js
+calendar.use({
+  install(cal) {
+    cal.on('eventAdd', (event) => {
+      console.log('Plugin: event added', event.title);
+    });
+  },
+});
+```
+
+## Lifecycle
+
+### destroy()
+
+Clean up all resources: listeners, plugins, event store subscriptions, and state.
+
+```js
+calendar.destroy();
+```
+
+Emits: `destroy`.

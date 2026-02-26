@@ -1,0 +1,88 @@
+---
+title: Introduction
+description: Enterprise-grade calendar infrastructure for Salesforce and strict-CSP environments.
+---
+
+## What is forceCalendar?
+
+forceCalendar is a modular, zero-dependency calendar engine built from the ground up for environments where most calendar libraries fail: Salesforce Lightning Locker Service, strict Content Security Policy (CSP) restrictions, and enterprise deployments that cannot tolerate third-party supply chain risk.
+
+The architecture follows a strict layered separation:
+
+```
+@forcecalendar/core        Headless engine (pure JS, zero deps)
+        ↓
+@forcecalendar/interface   Web Components UI layer
+        ↓
+Applications               www (Next.js), Salesforce LWC
+```
+
+Each layer can be used independently. The core package works in any JavaScript environment. The interface package adds a visual layer using Web Components with Shadow DOM encapsulation. Application layers adapt the interface to specific platforms.
+
+## Design Principles
+
+**Zero dependencies.** The entire core package ships as pure ESM JavaScript with no `node_modules` requirements. This eliminates supply chain risk and guarantees compatibility with locked-down environments.
+
+**Locker Service first.** Every API is designed to work within Salesforce Lightning Locker Service constraints: no `eval()`, no `innerHTML` in security-critical paths, no dynamic `import()`, no `Function()` constructors, no direct `window` or `document` global access.
+
+**Headless core.** The calendar engine manages state, events, recurrence, search, and ICS parsing without any DOM dependency. This enables server-side usage, testing without a browser, and framework-agnostic integration.
+
+**RFC 5545 compliance.** Recurrence rules, ICS import/export, and timezone handling follow the iCalendar specification. The RRULE parser supports all RFC 5545 frequencies (SECONDLY through YEARLY), BYDAY with nth positioning, BYMONTHDAY, BYYEARDAY, BYWEEKNO, BYSETPOS, EXDATE exceptions, and WKST configuration.
+
+**Immutable state management.** All state transitions produce new objects. The StateManager provides undo/redo history, key-specific watchers, and prototype pollution protection.
+
+## Package Overview
+
+### @forcecalendar/core (v2.1.20)
+
+The headless engine. Published on npm as `@forcecalendar/core`.
+
+| Module | Purpose |
+|--------|---------|
+| `Calendar` | Main calendar controller with view management, navigation, event CRUD |
+| `EnhancedCalendar` | Extended Calendar with Web Worker search and RecurrenceEngineV2 |
+| `Event` | Event model with timezone support, attendees, reminders, categories |
+| `EventStore` | Indexed event storage with O(1) lookups, batch operations, conflict detection |
+| `RecurrenceEngine` | RFC 5545 recurrence expansion (static API) |
+| `RecurrenceEngineV2` | Enhanced recurrence with modified instances, DST handling, caching |
+| `RRuleParser` | RRULE string parsing and generation |
+| `ICSParser` | Low-level RFC 5545 ICS parser |
+| `ICSHandler` | High-level ICS import/export with subscriptions |
+| `EventSearch` | Full-text search with fuzzy matching and Levenshtein distance |
+| `SearchWorkerManager` | Web Worker-based search with InvertedIndex fallback |
+| `StateManager` | Immutable state with undo/redo and change subscriptions |
+| `DateUtils` | Static date utility methods with timezone support |
+| `PerformanceOptimizer` | LRU caching, lazy indexing, metrics collection |
+| `AdaptiveMemoryManager` | Dynamic cache sizing based on memory pressure |
+| `LRUCache` | O(1) LRU cache using Map insertion order |
+
+### @forcecalendar/interface
+
+Web Components that consume the core engine.
+
+| Component | Element | Purpose |
+|-----------|---------|---------|
+| `ForceCalendar` | `<forcecal-main>` | Main calendar Web Component |
+| `BaseComponent` | - | Foundation class for all components |
+| `MonthViewRenderer` | - | Month grid renderer |
+| `WeekViewRenderer` | - | Week timeline renderer |
+| `DayViewRenderer` | - | Day timeline renderer |
+| `EventBus` | - | Cross-component event communication |
+| `StyleUtils` | - | CSS custom property theming system |
+
+### Salesforce LWC
+
+A Lightning Web Component wrapper that bridges `@forcecalendar/interface` with Salesforce:
+
+- Apex controller with `WITH SECURITY_ENFORCED` and CRUD/FLS checks
+- `@wire` integration for reactive event loading
+- Manual DOM insertion to bypass Locker Service static analysis
+- SLDS-styled chrome (spinner, error display, refresh)
+
+## Quick Links
+
+- [Quick Start](/docs/quick-start) -- Get running in 5 minutes
+- [Installation](/docs/installation) -- Package installation and configuration
+- [Calendar API](/docs/core/calendar) -- Main Calendar class documentation
+- [Event Model](/docs/core/event) -- Event creation and manipulation
+- [API Reference](/docs/api) -- Complete API reference for all public classes

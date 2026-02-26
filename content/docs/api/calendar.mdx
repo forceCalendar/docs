@@ -1,0 +1,125 @@
+---
+title: Calendar
+description: API reference for the Calendar class.
+---
+
+```js
+import { Calendar } from '@forcecalendar/core';
+```
+
+## Constructor
+
+```ts
+new Calendar(config?: CalendarConfig)
+```
+
+| Param | Type | Default |
+|-------|------|---------|
+| `config.view` | `'month' \| 'week' \| 'day' \| 'list'` | `'month'` |
+| `config.date` | `Date` | `new Date()` |
+| `config.weekStartsOn` | `number` | `0` |
+| `config.locale` | `string` | `'en-US'` |
+| `config.timeZone` | `string` | System timezone |
+| `config.showWeekNumbers` | `boolean` | `false` |
+| `config.showWeekends` | `boolean` | `true` |
+| `config.fixedWeekCount` | `boolean` | `true` |
+| `config.businessHours` | `{ start: string, end: string }` | `{ start: '09:00', end: '17:00' }` |
+| `config.events` | `EventData[]` | `undefined` |
+
+## View Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `setView` | `(viewType: string, date?: Date) => void` | — |
+| `getView` | `() => string` | Current view type |
+| `getViewData` | `() => ViewData` | Structured view data |
+
+## Navigation Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `next` | `() => void` | — |
+| `previous` | `() => void` | — |
+| `today` | `() => void` | — |
+| `goToDate` | `(date: Date) => void` | — |
+
+## Event CRUD
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `addEvent` | `(eventData: EventData) => Event` | Created Event |
+| `updateEvent` | `(eventId: string, updates: Partial<EventData>) => Event` | Updated Event |
+| `removeEvent` | `(eventId: string) => void` | — |
+| `getEvent` | `(eventId: string) => Event \| undefined` | Event or undefined |
+| `getEvents` | `() => Event[]` | All events |
+| `setEvents` | `(events: EventData[]) => void` | — |
+| `queryEvents` | `(filters: QueryFilters) => Event[]` | Filtered events |
+| `getEventsForDate` | `(date: Date, timezone?: string) => Event[]` | Events on date |
+| `getEventsInRange` | `(start: Date, end: Date, timezone?: string) => Event[]` | Events in range |
+
+## Timezone Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `setTimezone` | `(timezone: string) => void` | — |
+| `getTimezone` | `() => string` | IANA timezone |
+| `convertTimezone` | `(date: Date, from: string, to: string) => Date` | Converted date |
+| `toCalendarTimezone` | `(date: Date, from?: string) => Date` | Date in calendar tz |
+| `fromCalendarTimezone` | `(date: Date, to?: string) => Date` | Date in target tz |
+| `formatInTimezone` | `(date: Date, tz?: string, options?: object) => string` | Formatted string |
+| `getTimezones` | `() => string[]` | IANA timezone list |
+
+## Configuration Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `setLocale` | `(locale: string) => void` | — |
+| `setWeekStartsOn` | `(weekStartsOn: number) => void` | — |
+
+## Selection Methods
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `selectEvent` | `(eventId: string) => void` | — |
+| `clearEventSelection` | `() => void` | — |
+| `selectDate` | `(date: Date) => void` | — |
+| `clearDateSelection` | `() => void` | — |
+
+## Conflict Detection
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `getOverlapGroups` | `(date?: Date, tz?: string) => Event[][]` | Overlap groups |
+| `calculateEventPositions` | `(date?: Date, tz?: string) => Map` | Position map |
+
+## Event System
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `on` | `(eventName: string, callback: Function) => void` | — |
+| `off` | `(eventName: string, callback: Function) => void` | — |
+
+## Plugins
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `use` | `(plugin: { install: Function }) => void` | — |
+
+## Lifecycle
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `destroy` | `() => void` | — |
+
+## Events Emitted
+
+`viewChange`, `navigate`, `eventAdd`, `eventUpdate`, `eventRemove`, `eventsSet`, `stateChange`, `eventStoreChange`, `timezoneChange`, `localeChange`, `weekStartsOnChange`, `eventSelect`, `eventDeselect`, `dateSelect`, `dateDeselect`, `destroy`
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `eventStore` | `EventStore` | Internal event store |
+| `state` | `StateManager` | Internal state manager |
+| `timezoneManager` | `TimezoneManager` | Timezone singleton |
+| `config` | `object` | Resolved configuration |

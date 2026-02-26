@@ -1,0 +1,237 @@
+---
+title: Performance
+description: LRU caching, adaptive memory management, lazy indexing, and performance metrics.
+---
+
+## Overview
+
+The performance layer consists of three classes:
+
+| Class | Purpose |
+|-------|---------|
+| `LRUCache` | O(1) least-recently-used cache |
+| `PerformanceOptimizer` | Orchestrates caching, lazy indexing, metrics |
+| `AdaptiveMemoryManager` | Dynamically adjusts cache sizes based on memory pressure |
+
+These are used internally by `EnhancedCalendar` and `EventStore`. You can also use them directly for custom caching needs.
+
+## LRUCache
+
+An O(1) LRU cache implementation using JavaScript `Map` insertion order semantics. When the cache is full, the least-recently-used entry is evicted.
+
+```js
+import { LRUCache } from '@forcecalendar/core';
+
+const cache = new LRUCache(100); // maxSize = 100
+```
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `get(key)` | `value \| undefined` | Get a value (moves to most-recent) |
+| `put(key, value)` | `void` | Set a value (evicts LRU if full) |
+| `has(key)` | `boolean` | Check if key exists |
+| `delete(key)` | `boolean` | Remove a key |
+| `clear()` | `void` | Remove all entries |
+| `keys()` | `Iterator` | Iterate over keys |
+| `getStats()` | `object` | Cache statistics |
+
+### Statistics
+
+```js
+cache.getStats();
+// {
+//   size: 42,
+//   maxSize: 100,
+//   hits: 156,
+//   misses: 23,
+//   evictions: 8,
+//   hitRate: 0.871,
+// }
+```
+
+## PerformanceOptimizer
+
+Manages three internal LRU caches and provides metrics collection and lazy indexing.
+
+```js
+import { PerformanceOptimizer } from '@forcecalendar/core';
+
+const optimizer = new PerformanceOptimizer({
+  eventCacheSize: 500,
+  queryCacheSize: 100,
+  dateRangeCacheSize: 50,
+});
+```
+
+### Internal Caches
+
+| Cache | Default Size | Caches |
+|-------|-------------|--------|
+| `eventCache` | 500 | Individual event lookups |
+| `queryCache` | 100 | Query results (filter combinations) |
+| `dateRangeCache` | 50 | Date range expansion results |
+
+### cache(key, value, cacheType?)
+
+Store a value in one of the internal caches.
+
+```js
+optimizer.cache('evt_123', eventData, 'event');
+optimizer.cache('query:march-meetings', results, 'query');
+```
+
+### getFromCache(key, cacheType?)
+
+Retrieve a cached value.
+
+```js
+const cached = optimizer.getFromCache('evt_123', 'event');
+```
+
+### Metrics
+
+#### measure(operation, fn)
+
+Measure execution time of a synchronous operation.
+
+```js
+const result = optimizer.measure('expandRecurrence', () => {
+  return RecurrenceEngine.expandEvent(event, start, end);
+});
+```
+
+#### measureAsync(operation, fn)
+
+Measure execution time of an asynchronous operation.
+
+```js
+const result = await optimizer.measureAsync('search', async () => {
+  return searchManager.search('standup');
+});
+```
+
+#### getMetrics()
+
+Get collected performance metrics.
+
+```js
+optimizer.getMetrics();
+// {
+//   expandRecurrence: { count: 15, totalMs: 45.2, avgMs: 3.01 },
+//   search: { count: 8, totalMs: 12.1, avgMs: 1.51 },
+//   ...
+// }
+```
+
+### Lazy Indexing
+
+For recurring events, the optimizer can defer index expansion until a specific date range is actually queried.
+
+#### shouldUseLazyIndexing(event)
+
+Returns `true` if an event is a candidate for lazy indexing (i.e., it is recurring).
+
+#### createLazyIndexMarkers(event)
+
+Create minimal index entries that can be expanded on demand.
+
+#### expandLazyIndex(eventId, rangeStart, rangeEnd)
+
+Expand a lazy-indexed event for a specific date range.
+
+### optimizeQuery(queryKey, queryFn)
+
+Execute a query with caching. If the query has been run before with the same key, returns the cached result.
+
+```js
+const events = optimizer.optimizeQuery('march-2026-meetings', () => {
+  return store.queryEvents({ start, end, categories: ['meeting'] });
+});
+```
+
+### batch(operation)
+
+Execute an operation with metrics tracking.
+
+### destroy()
+
+Clear all caches and metrics.
+
+## AdaptiveMemoryManager
+
+Monitors memory usage and dynamically adjusts cache sizes to prevent out-of-memory conditions.
+
+```js
+import { AdaptiveMemoryManager } from '@forcecalendar/core';
+
+const manager = new AdaptiveMemoryManager();
+```
+
+### Configuration
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `checkInterval` | 30000ms | How often to check memory |
+| `memoryThreshold` | 0.8 | Start reducing caches at 80% memory |
+| `criticalThreshold` | 0.95 | Emergency clear at 95% memory |
+
+### registerCache(name, cache, options?)
+
+Register a cache for adaptive management.
+
+```js
+manager.registerCache('events', eventCache, {
+  minSize: 50,    // Never shrink below this
+  priority: 1,    // Lower priority = evicted first
+});
+```
+
+### startMonitoring()
+
+Begin periodic memory checks.
+
+### stopMonitoring()
+
+Stop periodic memory checks.
+
+### Memory Pressure Response
+
+At the **warning threshold** (80%):
+- Caches are reduced by 25%, starting with lowest priority
+- `touchCache(name)` marks a cache as recently used to protect it
+
+At the **critical threshold** (95%):
+- `emergencyClear()` clears all registered caches regardless of priority
+
+### getStats()
+
+```js
+manager.getStats();
+// {
+//   registeredCaches: 3,
+//   totalCacheSize: 342,
+//   memoryUsage: 0.65,
+//   isMonitoring: true,
+// }
+```
+
+### setThresholds(thresholds)
+
+Update memory thresholds at runtime.
+
+```js
+manager.setThresholds({
+  memoryThreshold: 0.7,
+  criticalThreshold: 0.9,
+});
+```
+
+### Memory Detection
+
+In browsers, `AdaptiveMemoryManager` uses `performance.memory` (Chrome only). In Node.js, it uses `process.memoryUsage()` through an indirect reference to avoid triggering Salesforce Locker Service restrictions on direct `process` access. When neither API is available, it falls back to conservative estimates based on cache sizes.
+
+### destroy()
+
+Stop monitoring and unregister all caches.

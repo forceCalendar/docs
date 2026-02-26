@@ -1,0 +1,171 @@
+---
+title: Deployment
+description: Deploying forceCalendar to a Salesforce org -- static resources, metadata, and app builder.
+---
+
+## Prerequisites
+
+- Salesforce org with Lightning Experience enabled
+- System Administrator or developer permissions
+- Salesforce CLI (`sf`) installed locally
+- API version 58.0 or higher
+
+## Project Structure
+
+```
+salesforce/
+└── src/
+    └── force-app/
+        └── main/
+            └── default/
+                ├── classes/
+                │   ├── ForceCalendarController.cls
+                │   └── ForceCalendarController.cls-meta.xml
+                ├── lwc/
+                │   └── forceCalendar/
+                │       ├── forceCalendar.js
+                │       ├── forceCalendar.html
+                │       └── forceCalendar.js-meta.xml
+                └── staticresources/
+                    ├── forceCalendarCore.js
+                    ├── forceCalendarCore.resource-meta.xml
+                    ├── forceCalendarInterface.js
+                    └── forceCalendarInterface.resource-meta.xml
+```
+
+## Step 1: Build Static Resources
+
+Build the core and interface packages for deployment as Salesforce static resources.
+
+```bash
+# In the core package directory
+cd /path/to/core
+npm run build  # Produces a single-file ESM bundle
+
+# In the interface package directory
+cd /path/to/interface
+npm run build  # Produces a single-file bundle
+```
+
+Copy the built files to `staticresources/`.
+
+## Step 2: Deploy to Org
+
+Using Salesforce CLI:
+
+```bash
+cd salesforce
+sf project deploy start --source-dir src/force-app
+```
+
+Or deploy individual components:
+
+```bash
+# Deploy Apex controller
+sf project deploy start --source-dir src/force-app/main/default/classes
+
+# Deploy LWC
+sf project deploy start --source-dir src/force-app/main/default/lwc
+
+# Deploy static resources
+sf project deploy start --source-dir src/force-app/main/default/staticresources
+```
+
+## Step 3: Configure in App Builder
+
+1. Open Lightning App Builder for the target page
+2. Drag `forceCalendar` from the custom components panel
+3. Configure properties in the right sidebar:
+   - **Current View**: `month`, `week`, or `day`
+   - **Height**: CSS height value (e.g., `600px`)
+   - **Record Id**: `{!recordId}` for context-aware filtering
+4. Save and activate the page
+
+## LWC Metadata Configuration
+
+The `forceCalendar.js-meta.xml` controls where the component can be placed:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>58.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <property name="currentView" type="String" default="month"
+                      label="Default View"
+                      description="Initial calendar view" />
+            <property name="height" type="String" default="600px"
+                      label="Height"
+                      description="Calendar height" />
+        </targetConfig>
+        <targetConfig targets="lightning__AppPage,lightning__HomePage">
+            <property name="currentView" type="String" default="month"
+                      label="Default View" />
+            <property name="height" type="String" default="600px"
+                      label="Height" />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>
+```
+
+## Permission Setup
+
+Ensure users have the following permissions:
+
+| Permission | Required For |
+|-----------|-------------|
+| Read on Event | Viewing calendar events |
+| Create on Event | Creating events from the calendar |
+| Edit on Event | Updating events (drag/resize/edit) |
+| Delete on Event | Removing events |
+| Apex Class Access | `ForceCalendarController` must be in the user's profile or permission set |
+
+To grant Apex class access:
+
+1. Go to Setup > Profiles (or Permission Sets)
+2. Find the target profile/permission set
+3. Under "Apex Class Access", add `ForceCalendarController`
+
+## Troubleshooting Deployment
+
+### "Cannot find module" Error
+
+If the LWC cannot find the static resource, ensure:
+- The static resource name matches the `import` statement
+- The static resource has `Content-Type: application/javascript`
+- The resource is deployed and active
+
+### Apex Test Coverage
+
+You may need to create test classes for `ForceCalendarController` before deploying to production:
+
+```apex
+@IsTest
+private class ForceCalendarControllerTest {
+    @IsTest
+    static void testGetEvents() {
+        Event testEvent = new Event(
+            Subject = 'Test',
+            StartDateTime = DateTime.now(),
+            EndDateTime = DateTime.now().addHours(1)
+        );
+        insert testEvent;
+
+        Test.startTest();
+        List<Event> events = ForceCalendarController.getEvents(
+            DateTime.now().addDays(-1),
+            DateTime.now().addDays(1),
+            null
+        );
+        Test.stopTest();
+
+        System.assert(events.size() > 0, 'Should return events');
+    }
+}
+```

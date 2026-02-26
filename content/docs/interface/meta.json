@@ -1,0 +1,10 @@
+{
+  "title": "Interface Package",
+  "pages": [
+    "index",
+    "web-components",
+    "theming",
+    "views",
+    "event-bus"
+  ]
+}

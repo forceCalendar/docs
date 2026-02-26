@@ -1,0 +1,146 @@
+---
+title: Installation
+description: Install and configure forceCalendar packages.
+---
+
+## Core Package
+
+```bash
+npm install @forcecalendar/core
+```
+
+The core package is published as pure ESM with no dependencies. It requires a JavaScript environment that supports ES modules.
+
+### Package Exports
+
+The package exposes the following entry points via `exports` in `package.json`:
+
+| Import Path | Module |
+|------------|--------|
+| `@forcecalendar/core` | All exports (Calendar, Event, EventStore, etc.) |
+| `@forcecalendar/core/calendar` | Calendar class |
+| `@forcecalendar/core/events` | Event class |
+| `@forcecalendar/core/state` | StateManager class |
+| `@forcecalendar/core/search` | EventSearch class |
+| `@forcecalendar/core/ics` | ICSHandler class |
+| `@forcecalendar/core/types` | TypeScript type definitions |
+
+### Import Examples
+
+```js
+// Import everything
+import {
+  Calendar,
+  Event,
+  EventStore,
+  StateManager,
+  DateUtils,
+  ICSParser,
+  ICSHandler,
+  EventSearch,
+  RecurrenceEngine,
+  RecurrenceEngineV2,
+  RRuleParser,
+  EnhancedCalendar,
+  SearchWorkerManager,
+  InvertedIndex,
+} from '@forcecalendar/core';
+
+// Import specific modules (tree-shakeable)
+import { Calendar } from '@forcecalendar/core/calendar';
+import { Event } from '@forcecalendar/core/events';
+import { StateManager } from '@forcecalendar/core/state';
+import { ICSHandler } from '@forcecalendar/core/ics';
+```
+
+## Interface Package
+
+```bash
+npm install @forcecalendar/interface
+```
+
+The interface package provides Web Components that consume the core engine. It registers the `<forcecal-main>` custom element automatically on import.
+
+```js
+import '@forcecalendar/interface';
+// <forcecal-main> is now available in the DOM
+```
+
+### Individual Imports
+
+```js
+import {
+  ForceCalendar,
+  BaseComponent,
+  MonthViewRenderer,
+  WeekViewRenderer,
+  DayViewRenderer,
+  EventBus,
+  eventBus,         // Singleton instance
+  StyleUtils,
+  DateUtils,
+  StateManager,
+} from '@forcecalendar/interface';
+```
+
+## Salesforce Deployment
+
+The Salesforce package is deployed as a Lightning Web Component with an Apex controller. It is not published on npm.
+
+### Prerequisites
+
+- Salesforce org with Lightning Experience enabled
+- API version 58.0 or higher
+- Read access to the `Event` standard object (or your custom object)
+
+### Deployment Steps
+
+1. Deploy the Apex controller: `ForceCalendarController.cls`
+2. Deploy the LWC component: `forceCalendar/`
+3. Deploy `@forcecalendar/core` and `@forcecalendar/interface` as static resources
+4. Add the component to a Lightning page via App Builder
+
+See the [Salesforce guide](/docs/salesforce) for detailed deployment instructions.
+
+## Browser Compatibility
+
+forceCalendar uses standard Web APIs with no polyfills required in modern browsers:
+
+| Feature | Used By | Minimum Support |
+|---------|---------|-----------------|
+| ES Modules | Core | All modern browsers |
+| `Intl.DateTimeFormat` | Timezone handling | All modern browsers |
+| `Map` / `Set` | EventStore, StateManager | All modern browsers |
+| `CustomEvent` | Interface events | All modern browsers |
+| `Shadow DOM` | Web Components | Chrome 53+, Firefox 63+, Safari 10+ |
+| `Web Workers` | SearchWorkerManager | All modern browsers (optional) |
+| `performance.memory` | AdaptiveMemoryManager | Chrome only (graceful fallback) |
+
+The core package works in Node.js 16+ for server-side usage and testing.
+
+## CDN Usage
+
+For quick prototyping without a build step:
+
+```html
+<script type="module">
+  import { Calendar } from 'https://esm.sh/@forcecalendar/core';
+
+  const calendar = new Calendar({ view: 'month' });
+</script>
+```
+
+## TypeScript Support
+
+Type definitions are included in the core package at `@forcecalendar/core/types`:
+
+```ts
+import type {
+  CalendarConfig,
+  CalendarState,
+  EventData,
+  RecurrenceRule,
+  ICSExportOptions,
+  SearchOptions,
+} from '@forcecalendar/core/types';
+```

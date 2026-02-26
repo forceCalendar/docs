@@ -1,0 +1,20 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "index",
+    "calendar",
+    "enhanced-calendar",
+    "event",
+    "event-store",
+    "state-manager",
+    "date-utils",
+    "recurrence-engine",
+    "rrule-parser",
+    "ics-parser",
+    "ics-handler",
+    "event-search",
+    "search-worker-manager",
+    "performance-optimizer",
+    "lru-cache"
+  ]
+}

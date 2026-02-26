@@ -1,0 +1,150 @@
+---
+title: EnhancedCalendar
+description: Extended Calendar with Web Worker search and advanced recurrence handling.
+---
+
+## Overview
+
+`EnhancedCalendar` extends `Calendar` with two additional capabilities:
+
+1. **Full-text search** via `SearchWorkerManager` (Web Worker-based with InvertedIndex fallback)
+2. **Advanced recurrence** via `RecurrenceEngineV2` (modified instances, DST-aware expansion, caching)
+
+```js
+import { EnhancedCalendar } from '@forcecalendar/core';
+
+const calendar = new EnhancedCalendar({
+  view: 'month',
+  timeZone: 'America/New_York',
+});
+```
+
+It inherits all `Calendar` methods and adds the following.
+
+## Search
+
+### search(query, options?)
+
+Full-text search across all events. Debounced indexing keeps the search index up-to-date as events change.
+
+```js
+const results = await calendar.search('standup', {
+  fields: ['title', 'description', 'location'],
+  fuzzy: true,
+  limit: 20,
+});
+// Returns array of { event, score } objects
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `fields` | `string[]` | `['title', 'description', 'location']` | Fields to search |
+| `fuzzy` | `boolean` | `false` | Enable fuzzy matching |
+| `limit` | `number` | `50` | Max results |
+
+### advancedSearch(query, filters?, options?)
+
+Combine full-text search with structured filters.
+
+```js
+const results = await calendar.advancedSearch('review', {
+  dateRange: {
+    start: new Date('2026-03-01'),
+    end: new Date('2026-03-31'),
+  },
+  categories: ['meeting'],
+  status: ['confirmed'],
+});
+```
+
+### getSuggestions(partial, field?)
+
+Get autocomplete suggestions based on a partial query.
+
+```js
+const suggestions = await calendar.getSuggestions('spr');
+// ['Sprint Planning', 'Spring Review', ...]
+```
+
+## Enhanced Recurrence
+
+### getEventsInRange(startDate, endDate, options?)
+
+Overrides the base `Calendar.getEventsInRange()` to use `RecurrenceEngineV2` for expansion. This version:
+
+- Applies modified instances (single-occurrence edits)
+- Handles DST transitions correctly
+- Uses an occurrence cache (LRU, 100 entries)
+
+```js
+const events = calendar.getEventsInRange(
+  new Date('2026-03-01'),
+  new Date('2026-03-31'),
+  { expandRecurring: true, timezone: 'America/New_York' }
+);
+```
+
+### modifyOccurrence(eventId, occurrenceDate, modifications)
+
+Edit a single occurrence of a recurring event without affecting other occurrences.
+
+```js
+calendar.modifyOccurrence('evt_weekly', new Date('2026-03-10'), {
+  title: 'Modified Standup',
+  start: new Date('2026-03-10T09:30:00'),
+  end: new Date('2026-03-10T10:00:00'),
+});
+```
+
+### cancelOccurrence(eventId, occurrenceDate, reason?)
+
+Cancel a single occurrence of a recurring event. The occurrence becomes an exception and will not appear in expansion results.
+
+```js
+calendar.cancelOccurrence('evt_weekly', new Date('2026-03-17'), 'Holiday');
+```
+
+### bulkModifyOccurrences(eventId, dateRange, modifications)
+
+Apply modifications to all occurrences within a date range.
+
+```js
+calendar.bulkModifyOccurrences(
+  'evt_weekly',
+  { start: new Date('2026-03-01'), end: new Date('2026-03-31') },
+  { location: 'Room 202' }
+);
+```
+
+## Import/Export
+
+### exportWithRecurrence(format)
+
+Export events with recurrence rules expanded.
+
+### importWithRecurrence(data, format)
+
+Import events with recurrence data.
+
+## Performance
+
+### getPerformanceStats()
+
+Returns metrics about search indexing, recurrence expansion, and cache hit rates.
+
+```js
+const stats = calendar.getPerformanceStats();
+// { searchIndexSize, cacheHitRate, expansionCount, ... }
+```
+
+## Lifecycle
+
+### destroy()
+
+Cleans up all resources including the search worker and recurrence engine caches.
+
+```js
+calendar.destroy();
+```
+
+Internally, the search index is rebuilt automatically (debounced) when events are added, updated, or removed. The debounce ensures that rapid batch operations do not trigger redundant re-indexing.

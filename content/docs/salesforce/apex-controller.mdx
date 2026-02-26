@@ -1,0 +1,200 @@
+---
+title: Apex Controller
+description: ForceCalendarController -- SOQL queries, CRUD operations, and security enforcement.
+---
+
+## Overview
+
+`ForceCalendarController` is the server-side Apex class that handles data access for the forceCalendar LWC. It uses `with sharing` to respect the running user's sharing rules and `WITH SECURITY_ENFORCED` in all SOQL queries.
+
+```apex
+public with sharing class ForceCalendarController {
+    // All methods use security enforcement
+}
+```
+
+## Methods
+
+### getEvents
+
+Query events within a date range, optionally filtered by a related record.
+
+```apex
+@AuraEnabled(cacheable=true)
+public static List<Event> getEvents(
+    DateTime startDateTime,
+    DateTime endDateTime,
+    String recordId
+)
+```
+
+**SOQL:**
+
+```sql
+SELECT Id, Subject, StartDateTime, EndDateTime, IsAllDayEvent,
+       Description, Location, WhoId, WhatId
+FROM Event
+WHERE StartDateTime >= :startDateTime
+  AND EndDateTime <= :endDateTime
+  [AND (WhoId = :recordId OR WhatId = :recordId)]
+WITH SECURITY_ENFORCED
+ORDER BY StartDateTime ASC
+```
+
+When `recordId` is provided, the query filters to events related to that record (via `WhoId` or `WhatId`). When `null`, all visible events in the range are returned.
+
+The `cacheable=true` annotation enables Lightning Data Service caching. Cached results are automatically invalidated when the LWC calls refreshApex.
+
+### createEvent
+
+Create a new Event record.
+
+```apex
+@AuraEnabled
+public static Event createEvent(
+    String title,
+    DateTime startDateTime,
+    DateTime endDateTime,
+    Boolean isAllDay,
+    String description,
+    String location,
+    String whoId,
+    String whatId
+)
+```
+
+**Security checks:**
+
+```apex
+if (!Schema.sObjectType.Event.isCreateable()) {
+    throw new AuraHandledException('Insufficient permissions to create events');
+}
+```
+
+Fields are checked at the object level. The method creates an `Event` SObject, inserts it, and returns the created record.
+
+### updateEvent
+
+Update an existing Event record.
+
+```apex
+@AuraEnabled
+public static Event updateEvent(
+    String eventId,
+    String title,
+    DateTime startDateTime,
+    DateTime endDateTime,
+    Boolean isAllDay,
+    String description,
+    String location
+)
+```
+
+**Security checks:**
+
+```apex
+if (!Schema.sObjectType.Event.isUpdateable()) {
+    throw new AuraHandledException('Insufficient permissions to update events');
+}
+```
+
+Queries the existing event first, applies updates, and performs DML update.
+
+### deleteEvent
+
+Delete an Event record by ID.
+
+```apex
+@AuraEnabled
+public static void deleteEvent(String eventId)
+```
+
+**Security checks:**
+
+```apex
+if (!Schema.sObjectType.Event.isDeletable()) {
+    throw new AuraHandledException('Insufficient permissions to delete events');
+}
+```
+
+## Security Model
+
+### Object-Level Security
+
+Every mutation method checks CRUD permissions before executing DML:
+
+| Operation | Check |
+|-----------|-------|
+| Create | `Schema.sObjectType.Event.isCreateable()` |
+| Update | `Schema.sObjectType.Event.isUpdateable()` |
+| Delete | `Schema.sObjectType.Event.isDeletable()` |
+
+### Field-Level Security
+
+All SOQL queries use `WITH SECURITY_ENFORCED`, which:
+
+- Enforces field-level security (FLS) for all fields in the SELECT clause
+- Throws a `System.QueryException` if the user lacks read access to any queried field
+- Cannot be bypassed by the running user
+
+### Sharing Rules
+
+The `with sharing` class keyword ensures:
+
+- Record-level sharing rules are respected
+- Only events visible to the running user are returned
+- OWD (Organization-Wide Default) settings are enforced
+
+### Error Handling
+
+All methods wrap exceptions in `AuraHandledException` for proper LWC error display:
+
+```apex
+try {
+    insert newEvent;
+} catch (DmlException e) {
+    throw new AuraHandledException('Failed to create event: ' + e.getMessage());
+}
+```
+
+## Field Mapping
+
+| Salesforce Field | forceCalendar Property | Direction |
+|-----------------|----------------------|-----------|
+| `Subject` | `title` | Read/Write |
+| `StartDateTime` | `start` | Read/Write |
+| `EndDateTime` | `end` | Read/Write |
+| `IsAllDayEvent` | `allDay` | Read/Write |
+| `Description` | `description` | Read/Write |
+| `Location` | `location` | Read/Write |
+| `WhoId` | — | Write (create only) |
+| `WhatId` | — | Write (create only) |
+| `Id` | `id` | Read only |
+
+## Customization
+
+To use a custom object instead of the standard `Event` object:
+
+1. Replace `Event` SObject references with your custom object
+2. Update field API names in SOQL and DML
+3. Update security checks to reference the custom object
+4. Adjust the field mapping in the LWC component
+
+For example, to use a custom `Calendar_Event__c` object:
+
+```apex
+@AuraEnabled(cacheable=true)
+public static List<Calendar_Event__c> getEvents(
+    DateTime startDateTime,
+    DateTime endDateTime,
+    String recordId
+) {
+    return [
+        SELECT Id, Name, Start_Date__c, End_Date__c, ...
+        FROM Calendar_Event__c
+        WHERE Start_Date__c >= :startDateTime
+          AND End_Date__c <= :endDateTime
+        WITH SECURITY_ENFORCED
+    ];
+}
+```

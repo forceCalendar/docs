@@ -1,0 +1,216 @@
+---
+title: Search
+description: Full-text search with fuzzy matching, Web Worker offloading, and inverted index.
+---
+
+## Overview
+
+forceCalendar provides two search implementations:
+
+| Class | Execution | Best For |
+|-------|-----------|----------|
+| `EventSearch` | Main thread | Small datasets (under 1000 events), synchronous results |
+| `SearchWorkerManager` | Web Worker | Large datasets, non-blocking UI |
+
+Both support fuzzy matching via Levenshtein distance and field-weighted scoring.
+
+## EventSearch
+
+Full-text search with fuzzy matching, filtering, grouping, and suggestions.
+
+```js
+import { EventSearch } from '@forcecalendar/core';
+
+const search = new EventSearch(eventStore);
+```
+
+### search(query, options?)
+
+Search events by text query.
+
+```js
+const results = search.search('standup', {
+  fields: ['title', 'description', 'location'],
+  fuzzy: true,
+  caseSensitive: false,
+  limit: 20,
+  sortBy: 'relevance', // or 'start', 'title'
+});
+// Returns array of Event objects sorted by relevance
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `fields` | `string[]` | `['title', 'description', 'location']` | Fields to search |
+| `fuzzy` | `boolean` | `false` | Enable Levenshtein distance matching |
+| `caseSensitive` | `boolean` | `false` | Case-sensitive matching |
+| `limit` | `number` | `50` | Maximum results |
+| `sortBy` | `string` | `'relevance'` | Sort order |
+
+Fuzzy matching uses Levenshtein distance with a threshold proportional to query length. Short queries (1-3 chars) require exact prefix matches; longer queries allow distance up to `Math.floor(queryLength / 3)`.
+
+### filter(filters)
+
+Filter events by structured criteria without a text query.
+
+```js
+const results = search.filter({
+  dateRange: {
+    start: new Date('2026-03-01'),
+    end: new Date('2026-03-31'),
+  },
+  categories: ['meeting', 'review'],
+  locations: ['Room 301', 'Room 302'],
+  attendees: ['alice@example.com'],
+  status: ['confirmed', 'tentative'],
+  allDay: false,
+  recurring: true,
+  hasReminders: true,
+  custom: (event) => event.durationMinutes > 30,
+});
+```
+
+| Filter | Type | Description |
+|--------|------|-------------|
+| `dateRange` | `{ start, end }` | Events within date range |
+| `categories` | `string[]` | Events matching any category |
+| `locations` | `string[]` | Events at any of these locations |
+| `attendees` | `string[]` | Events with any of these attendees |
+| `status` | `string[]` | Events with any of these statuses |
+| `allDay` | `boolean` | All-day event filter |
+| `recurring` | `boolean` | Recurring event filter |
+| `hasReminders` | `boolean` | Has reminders filter |
+| `custom` | `Function` | Custom predicate function |
+
+### advancedSearch(query, filters?, options?)
+
+Combine text search with structured filters.
+
+```js
+const results = search.advancedSearch(
+  'planning',
+  {
+    categories: ['meeting'],
+    dateRange: { start: new Date('2026-03-01'), end: new Date('2026-03-31') },
+  },
+  { fuzzy: true, limit: 10 }
+);
+```
+
+### getSuggestions(partial, options?)
+
+Get autocomplete suggestions based on partial input.
+
+```js
+const suggestions = search.getSuggestions('spr', {
+  field: 'title',  // Search in specific field
+  limit: 5,
+});
+// ['Sprint Planning', 'Spring Review']
+```
+
+### getUniqueValues(field)
+
+Get all unique values for a given field across all events.
+
+```js
+const locations = search.getUniqueValues('location');
+// ['Room 301', 'Room 302', 'Virtual']
+```
+
+### groupBy(field, options?)
+
+Group events by a field value.
+
+```js
+const grouped = search.groupBy('category');
+// { meeting: [Event, ...], review: [Event, ...] }
+```
+
+### rebuildIndex()
+
+Force a rebuild of the search index. Called automatically when events change.
+
+## SearchWorkerManager
+
+Offloads search to a Web Worker for non-blocking performance on large datasets. Falls back to `InvertedIndex` on the main thread if Web Workers are unavailable (e.g., Salesforce Locker Service).
+
+```js
+import { SearchWorkerManager } from '@forcecalendar/core';
+
+const manager = new SearchWorkerManager(eventStore);
+```
+
+### search(query, options?)
+
+Asynchronous search. Returns a Promise.
+
+```js
+const results = await manager.search('standup', {
+  fields: ['title', 'description', 'location'],
+  fuzzy: true,
+  limit: 20,
+});
+```
+
+### indexEvents()
+
+Rebuild the search index in the worker.
+
+```js
+await manager.indexEvents();
+```
+
+### clear()
+
+Clear the worker's search index.
+
+### destroy()
+
+Terminate the Web Worker and clean up.
+
+## InvertedIndex
+
+The fallback search implementation used when Web Workers are unavailable. Also exported for direct use.
+
+```js
+import { InvertedIndex } from '@forcecalendar/core';
+
+const index = new InvertedIndex();
+
+// Build index from events
+index.buildIndex(events);
+
+// Search
+const results = index.search('standup', {
+  fields: ['title', 'description', 'location'],
+  fuzzy: true,
+});
+```
+
+### Field Boost Weights
+
+The inverted index applies these weights when scoring search results:
+
+| Field | Boost |
+|-------|-------|
+| `title` | 2.0 |
+| `location` | 1.5 |
+| `category` | 1.5 |
+| `description` | 1.0 |
+
+### Tokenization
+
+Text is tokenized by:
+1. Converting to lowercase
+2. Splitting on whitespace and punctuation
+3. Filtering tokens shorter than 2 characters
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `buildIndex(events)` | Build the inverted index from events |
+| `tokenize(text)` | Tokenize a string |
+| `search(query, options)` | Search the index |
+| `clear()` | Clear the index |

@@ -1,0 +1,80 @@
+---
+title: Security Overview
+description: Security architecture, threat model, and hardening measures.
+---
+
+## Security Architecture
+
+forceCalendar is designed for deployment in security-sensitive environments. The architecture addresses threats at multiple layers:
+
+### Zero Dependencies
+
+The core package has zero runtime dependencies. This eliminates:
+
+- Supply chain attacks via compromised transitive dependencies
+- Known vulnerability accumulation in `node_modules`
+- License compliance risk from third-party code
+- Version pinning and audit overhead
+
+### CSP Compliance
+
+The codebase avoids all patterns that violate strict Content Security Policy:
+
+| CSP Directive | forceCalendar Compliance |
+|---------------|-------------------------|
+| `script-src 'self'` | No `eval()`, `Function()`, or inline scripts |
+| `style-src 'self'` | CSS custom properties, no inline `<style>` injection |
+| `connect-src` | No network requests in core; Apex for Salesforce data |
+| `worker-src` | Web Workers optional, with synchronous fallback |
+
+### Input Validation
+
+All external inputs are validated:
+
+- **Event data**: `Event.validate()` checks types, ranges, and required fields
+- **RRULE strings**: `RRuleParser.parse()` validates frequencies, ranges, and mutual exclusivity (COUNT vs UNTIL)
+- **ICS data**: `ICSParser.parse()` handles malformed input without throwing unstructured errors
+- **State updates**: `StateManager.setState()` strips `__proto__`, `constructor`, `prototype` keys
+- **CSS values**: `StyleUtils.sanitizeColor()` rejects `url()`, `expression()`, and injection attempts
+
+### Prototype Pollution Protection
+
+`StateManager.setState()` explicitly deletes dangerous keys before merging:
+
+```js
+if (updates && typeof updates === 'object') {
+  delete updates.__proto__;
+  delete updates.constructor;
+  delete updates.prototype;
+}
+```
+
+### XSS Prevention
+
+- View renderers use `document.createElement()` and `textContent` instead of `innerHTML`
+- Event titles and descriptions are never injected as raw HTML
+- CSS color values are sanitized to prevent CSS injection
+- `StyleUtils.sanitizeColor()` strips `url()`, `expression()`, and multi-statement CSS
+
+## Threat Model
+
+| Threat | Mitigation |
+|--------|-----------|
+| XSS via event content | No innerHTML; textContent-only rendering |
+| Prototype pollution | Key stripping in setState() |
+| CSS injection via theme vars | sanitizeColor() validation |
+| Supply chain compromise | Zero dependencies |
+| SSRF via ICS URLs | ICS URL import not available in Salesforce (CSP blocked); URL validation in non-SF contexts |
+| ReDoS via RRULE | Simple regex patterns; bounded iteration limits |
+| Memory exhaustion | AdaptiveMemoryManager with emergency clear at 95% |
+| Unauthorized data access | Apex: WITH SECURITY_ENFORCED, with sharing, CRUD/FLS checks |
+| Denial of service via recurrence | maxOccurrences limit (default 365) on expansion |
+
+## Salesforce Security
+
+The Apex controller enforces Salesforce's security model at every layer:
+
+1. **Sharing rules** (`with sharing`): Only events visible to the running user are returned
+2. **FLS** (`WITH SECURITY_ENFORCED`): Field-level access is enforced on all SOQL queries
+3. **CRUD** (`isCreateable/isUpdateable/isDeletable`): Object-level permissions checked before DML
+4. **AuraHandledException**: Error messages are sanitized before returning to the client
