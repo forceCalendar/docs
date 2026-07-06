@@ -5,6 +5,8 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
+      // Brand mark links back to the main site, like on the other properties
+      url: 'https://forcecalendar.org',
       title: (
         <span className="text-lg tracking-tight">
           <span className="font-light">force</span>
