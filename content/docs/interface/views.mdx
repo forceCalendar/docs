@@ -41,7 +41,7 @@ Renders a grid of 5-6 weeks with 7 days per week.
 | Show 6 weeks | `fixedWeekCount` in Calendar config |
 | Show weekends | `showWeekends` in Calendar config |
 | Show week numbers | `showWeekNumbers` in Calendar config |
-| Today highlight | Automatic (uses `--fc-today-bg`) |
+| Today highlight | Automatic (uses `--fc-primary-color` on the day number) |
 | Current month | Days outside current month are dimmed |
 
 ### CSS Classes
@@ -96,7 +96,7 @@ When events overlap:
 
 ### Business Hours
 
-The time range defined by `businessHours` (default 9:00-17:00) is visually distinguished using `--fc-bg-secondary`.
+The time range defined by `businessHours` (default 9:00-17:00) is visually distinguished using `--fc-background-alt`.
 
 ## DayViewRenderer
 
@@ -111,20 +111,16 @@ Renders a single-day timeline. Same layout principles as WeekViewRenderer but wi
 
 ## Renderer API
 
-All renderers follow the same interface:
+All renderers follow the same interface -- they are constructed with a container element and a `StateManager`, then rendered with no arguments:
 
 ```js
-class ViewRenderer {
-  render(container, viewData, options) {
-    // Populate container with DOM elements
-  }
-}
+const renderer = new MonthViewRenderer(container, stateManager);
+renderer.render();
 ```
 
-| Parameter | Description |
-|-----------|-------------|
+| Constructor Parameter | Description |
+|-----------------------|-------------|
 | `container` | DOM element to render into |
-| `viewData` | Output from `Calendar.getViewData()` |
-| `options` | Configuration (locale, timezone, event handlers) |
+| `stateManager` | `StateManager` instance providing view data, config, and events |
 
-Renderers clear the container and rebuild the DOM on each render call. They do not use virtual DOM diffing.
+`render()` takes no arguments -- the renderer pulls current view data from the `StateManager`. Renderers clear the container and rebuild the DOM on each render call. They do not use virtual DOM diffing.

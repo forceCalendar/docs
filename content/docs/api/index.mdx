@@ -5,7 +5,7 @@ description: Complete API reference for all public classes in @forcecalendar/cor
 
 ## All Public Classes
 
-These classes are exported from `@forcecalendar/core`:
+Unless marked internal, these classes are exported from `@forcecalendar/core`:
 
 ### Core
 
@@ -54,12 +54,14 @@ These classes are exported from `@forcecalendar/core`:
 |-------|--------|-------------|
 | [DateUtils](/docs/api/date-utils) | `@forcecalendar/core` | Static date utilities |
 
-### Performance
+### Performance (internal)
 
-| Class | Import | Description |
+These classes are documented for reference but are **not** exported from the `@forcecalendar/core` package entry point. They are internal utilities used by `EventStore` and `EnhancedCalendar`.
+
+| Class | Access | Description |
 |-------|--------|-------------|
-| [PerformanceOptimizer](/docs/api/performance-optimizer) | `@forcecalendar/core` | Caching and metrics |
-| [LRUCache](/docs/api/lru-cache) | `@forcecalendar/core` | O(1) LRU cache |
+| [PerformanceOptimizer](/docs/api/performance-optimizer) | Internal (e.g. via `calendar.eventStore.getPerformanceMetrics()`) | Caching and metrics |
+| [LRUCache](/docs/api/lru-cache) | Internal (used by PerformanceOptimizer) | O(1) LRU cache |
 
 ## Import Patterns
 

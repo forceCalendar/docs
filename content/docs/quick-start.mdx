@@ -98,7 +98,7 @@ calendar.goToDate(new Date('2026-06-15'));
 ## Listening to Events
 
 ```js
-calendar.on('eventAdd', (event) => {
+calendar.on('eventAdd', ({ event }) => {
   console.log('Event added:', event.title);
 });
 
@@ -110,12 +110,12 @@ calendar.on('viewChange', ({ view }) => {
   console.log(`View changed to: ${view}`);
 });
 
-calendar.on('eventUpdate', ({ event, changes }) => {
-  console.log('Event updated:', event.id, changes);
+calendar.on('eventUpdate', ({ event, oldEvent }) => {
+  console.log('Event updated:', event.id, oldEvent);
 });
 
-calendar.on('eventRemove', ({ eventId }) => {
-  console.log('Event removed:', eventId);
+calendar.on('eventRemove', ({ event }) => {
+  console.log('Event removed:', event.id);
 });
 ```
 

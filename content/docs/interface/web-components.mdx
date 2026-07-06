@@ -29,7 +29,7 @@ These HTML attributes are reactive -- changes trigger re-renders.
 | `locale` | `string` | `'en-US'` | BCP 47 locale |
 | `timezone` | `string` | System | IANA timezone |
 | `week-starts-on` | `string` | `'0'` | 0=Sunday, 1=Monday |
-| `height` | `string` | `'auto'` | CSS height value |
+| `height` | `string` | `'800px'` | CSS height value |
 
 ```js
 const el = document.querySelector('forcecal-main');
@@ -95,10 +95,10 @@ The component dispatches these `CustomEvent`s with `bubbles: true` and `composed
 
 | Event | `detail` | When |
 |-------|----------|------|
-| `calendar-navigate` | `{ date, view, direction }` | Navigation occurs |
+| `calendar-navigate` | `{ action, date }` | Navigation occurs |
 | `calendar-view-change` | `{ view }` | View type changes |
 | `calendar-event-add` | `{ event }` | Event creation requested |
-| `calendar-event-update` | `{ eventId, updates }` | Event update requested |
+| `calendar-event-update` | `{ event }` | Event update requested |
 | `calendar-event-remove` | `{ eventId }` | Event deletion requested |
 | `calendar-event-added` | `{ event }` | Event was added |
 | `calendar-event-updated` | `{ event }` | Event was updated |
@@ -120,19 +120,25 @@ el.addEventListener('calendar-date-select', (e) => {
 The component renders this internal structure inside its Shadow DOM:
 
 ```
-<div class="fc-calendar">
-  <div class="fc-header">
-    <button class="fc-today-btn">Today</button>
-    <button class="fc-prev-btn">&lt;</button>
-    <button class="fc-next-btn">&gt;</button>
-    <h2 class="fc-title">March 2026</h2>
-    <button class="fc-new-event-btn">+ New Event</button>
-    <div class="fc-view-switcher">
-      <button>Month</button>
-      <button>Week</button>
-      <button>Day</button>
+<div class="force-calendar">
+  <header class="fc-header">
+    <div class="fc-header-left">
+      <button class="fc-btn-today">Today</button>
     </div>
-  </div>
+    <div class="fc-header-center">
+      <button class="fc-nav-arrow" data-action="previous">&lt;</button>
+      <h2 class="fc-title">March 2026</h2>
+      <button class="fc-nav-arrow" data-action="next">&gt;</button>
+    </div>
+    <div class="fc-header-right">
+      <button class="fc-btn fc-btn-primary" id="create-event-btn">+ New Event</button>
+      <div class="fc-view-buttons">
+        <button class="fc-view-button" data-view="month">Month</button>
+        <button class="fc-view-button" data-view="week">Week</button>
+        <button class="fc-view-button" data-view="day">Day</button>
+      </div>
+    </div>
+  </header>
   <div class="fc-body">
     <!-- View renderer output -->
   </div>
@@ -173,7 +179,7 @@ const locale = this.getProp('locale');
 
 ```js
 // Query within shadow root
-const btn = this.$('.fc-today-btn');
+const btn = this.$('.fc-btn-today');
 const allBtns = this.$$('.fc-btn');
 ```
 
@@ -189,7 +195,7 @@ this.emit('calendar-navigate', { date: new Date(), view: 'month' });
 Listeners registered via `addListener()` are automatically cleaned up on disconnect:
 
 ```js
-this.addListener(this.$('.fc-prev-btn'), 'click', () => this.previous());
+this.addListener(this.$('.fc-nav-arrow'), 'click', () => this.previous());
 ```
 
 ### Re-render Preservation

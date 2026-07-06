@@ -25,12 +25,15 @@ const bus = new EventBus();
 
 ### on(eventName, handler, options?)
 
-Subscribe to an event. Returns `void`.
+Subscribe to an event. Returns an unsubscribe function.
 
 ```js
-eventBus.on('event:added', (data) => {
+const unsubscribe = eventBus.on('event:added', (data) => {
   console.log('Event added:', data);
 });
+
+// Later: remove the subscription
+unsubscribe();
 
 // With options
 eventBus.on('event:added', handler, {
@@ -67,7 +70,7 @@ eventBus.on('*', handler);
 | Pattern | Matches | Does Not Match |
 |---------|---------|----------------|
 | `event:added` | `event:added` only | `event:updated`, `event:*` |
-| `event:*` | `event:added`, `event:updated`, `event:removed` | `navigation:next` |
+| `event:*` | `event:added`, `event:updated`, `event:deleted` | `navigation:next` |
 | `*` | Everything | — |
 
 Wildcard handlers are stored separately from exact-match handlers. When an event fires, both the exact-match handlers and any matching wildcard handlers are invoked.
@@ -79,7 +82,7 @@ Wildcard handlers are stored separately from exact-match handlers. When an event
 Emit an event to all matching subscribers.
 
 ```js
-eventBus.emit('navigation:next', { date: new Date(), view: 'month' });
+eventBus.emit('navigation:next', { date: new Date() });
 ```
 
 Handler invocation order:
@@ -135,15 +138,16 @@ These events are used internally by forceCalendar components:
 
 | Event | Emitted By | Data |
 |-------|-----------|------|
-| `navigation:next` | ForceCalendar | `{ date, view }` |
-| `navigation:previous` | ForceCalendar | `{ date, view }` |
-| `navigation:today` | ForceCalendar | `{ date, view }` |
-| `view:change` | ForceCalendar | `{ view }` |
+| `navigation:next` | ForceCalendar | `{ date }` |
+| `navigation:previous` | ForceCalendar | `{ date }` |
+| `navigation:today` | ForceCalendar | `{ date }` |
+| `view:changed` | ForceCalendar | `{ view }` |
 | `event:added` | ForceCalendar | `{ event }` |
 | `event:updated` | ForceCalendar | `{ event }` |
-| `event:removed` | ForceCalendar | `{ eventId }` |
-| `date:select` | MonthViewRenderer | `{ date }` |
-| `event:select` | Renderers | `{ eventId }` |
+| `event:remove` | ForceCalendar | `{ eventId }` |
+| `event:deleted` | ForceCalendar | `{ eventId }` |
+| `date:selected` | MonthViewRenderer | `{ date }` |
+| `event:selected` | Renderers | `{ event }` |
 
 ## Priority Example
 

@@ -21,10 +21,10 @@ Query events within a date range, optionally filtered by a related record.
 
 ```apex
 @AuraEnabled(cacheable=true)
-public static List<Event> getEvents(
+public static List<Map<String, Object>> getEvents(
     DateTime startDateTime,
     DateTime endDateTime,
-    String recordId
+    Id recordId
 )
 ```
 
@@ -51,15 +51,15 @@ Create a new Event record.
 
 ```apex
 @AuraEnabled
-public static Event createEvent(
+public static Id createEvent(
     String title,
     DateTime startDateTime,
     DateTime endDateTime,
     Boolean isAllDay,
     String description,
     String location,
-    String whoId,
-    String whatId
+    Id whoId,
+    Id whatId
 )
 ```
 
@@ -71,7 +71,7 @@ if (!Schema.sObjectType.Event.isCreateable()) {
 }
 ```
 
-Fields are checked at the object level. The method creates an `Event` SObject, inserts it, and returns the created record.
+Fields are checked at the object level. The method creates an `Event` SObject, inserts it, and returns the new record's `Id`.
 
 ### updateEvent
 
@@ -79,8 +79,8 @@ Update an existing Event record.
 
 ```apex
 @AuraEnabled
-public static Event updateEvent(
-    String eventId,
+public static void updateEvent(
+    Id eventId,
     String title,
     DateTime startDateTime,
     DateTime endDateTime,

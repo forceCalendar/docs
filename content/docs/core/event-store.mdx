@@ -135,22 +135,22 @@ const events = store.getEventsInRange(
 );
 ```
 
-### getOverlappingEvents(event)
+### getOverlappingEvents(start, end, excludeId?)
 
-Find all events that overlap with the given event.
+Find all events that overlap with the given time range. Pass `excludeId` to ignore a specific event (defaults to `null`).
 
 ```js
-const overlaps = store.getOverlappingEvents(myEvent);
+const overlaps = store.getOverlappingEvents(myEvent.start, myEvent.end, myEvent.id);
 ```
 
 ## Conflict Detection
 
-### hasConflicts(event)
+### hasConflicts(start, end, excludeId?)
 
-Check if an event conflicts with any existing events. Returns `boolean`.
+Check if a time range conflicts with any existing events. Pass `excludeId` to ignore a specific event (defaults to `null`). Returns `boolean`.
 
 ```js
-if (store.hasConflicts(newEvent)) {
+if (store.hasConflicts(newEvent.start, newEvent.end)) {
   console.log('Time conflict detected');
 }
 ```
@@ -159,48 +159,50 @@ if (store.hasConflicts(newEvent)) {
 
 Detailed conflict check. Returns an object with conflict information.
 
-### getAllConflicts()
+### getAllConflicts(start, end, options?)
 
-Find all conflicting event pairs in the store.
+Find all conflicting event pairs within a date range.
 
-### getOverlapGroups(date?, timezone?)
+### getOverlapGroups(date, timedOnly?)
 
-Group overlapping events together. Each group is an array of events that mutually overlap.
+Group overlapping events together for a specific date. Each group is an array of events that mutually overlap. Pass `timedOnly = false` to include all-day events (defaults to `true`).
 
 ```js
 const groups = store.getOverlapGroups(new Date('2026-03-15'));
 // [[event1, event2], [event3, event4, event5]]
 ```
 
-### calculateEventPositions(date?, timezone?)
+### calculateEventPositions(events)
 
-Calculate horizontal positioning for overlapping events in a day/week view. Returns a `Map<eventId, position>` where each position has:
+Calculate horizontal positioning for an array of overlapping events in a day/week view. Returns a `Map<eventId, position>` where each position has:
 
 ```js
-const positions = store.calculateEventPositions(new Date('2026-03-15'));
+const events = store.getEventsForDate(new Date('2026-03-15'));
+const positions = store.calculateEventPositions(events);
 positions.get('evt_123');
 // { left: 0, width: 0.5, column: 0, totalColumns: 2 }
 ```
 
-### getBusyPeriods(start, end)
+### getBusyPeriods(attendeeEmails, start, end, options?)
 
-Get time periods that have at least one event.
+Get time periods within a range where the given attendees have at least one event.
 
 ```js
 const busy = store.getBusyPeriods(
+  ['alice@example.com'],
   new Date('2026-03-15T00:00:00'),
   new Date('2026-03-15T23:59:59')
 );
 // [{ start: Date, end: Date }, ...]
 ```
 
-### getFreePeriods(start, end)
+### getFreePeriods(start, end, durationMinutes, options?)
 
-Get time periods that have no events.
+Get free time periods within a range that are at least `durationMinutes` long.
 
-### addEventWithConflictCheck(eventData, options?)
+### addEventWithConflictCheck(event, allowConflicts?)
 
-Add an event only if it doesn't conflict. Throws or returns a conflict report based on options.
+Add an event with conflict checking. When `allowConflicts` is `false`, throws if conflicts are detected (defaults to `true`).
 
 ### findEventsWithConflicts()
 
@@ -266,11 +268,11 @@ store.removeEvents(['evt_1', 'evt_2']);
 
 ### subscribe(callback)
 
-Subscribe to store changes. Returns an unsubscribe function.
+Subscribe to store changes. The callback receives a single change object (e.g. `{ type, event, version }`). Returns an unsubscribe function.
 
 ```js
-const unsubscribe = store.subscribe((type, data) => {
-  console.log(`Store ${type}:`, data);
+const unsubscribe = store.subscribe((change) => {
+  console.log(`Store ${change.type}:`, change.event);
 });
 
 // Later:

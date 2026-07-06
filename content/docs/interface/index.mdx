@@ -29,7 +29,7 @@ interface/src/
 The main entry point is the `<forcecal-main>` custom element (`ForceCalendar` class). It:
 
 1. Extends `BaseComponent` for lifecycle management
-2. Creates a `Calendar` instance from `@forcecalendar/core`
+2. Creates a `StateManager`, which wraps a `Calendar` instance from `@forcecalendar/core`
 3. Delegates rendering to view-specific renderers (Month, Week, Day)
 4. Emits `CustomEvent`s for external integration
 5. Uses `EventBus` for internal cross-component communication
@@ -63,4 +63,4 @@ import { ForceCalendar, BaseComponent, EventBus } from '@forcecalendar/interface
 | `StyleUtils` | CSS variable theming utilities |
 | `DateUtils` | Date formatting utilities |
 | `DOMUtils` | DOM manipulation utilities |
-| `StateManager` | Re-exported from core |
+| `StateManager` | Interface package's own state management class (`src/core/StateManager.js`) that wraps the core `Calendar` |

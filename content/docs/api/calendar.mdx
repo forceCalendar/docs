@@ -67,7 +67,7 @@ new Calendar(config?: CalendarConfig)
 | `toCalendarTimezone` | `(date: Date, from?: string) => Date` | Date in calendar tz |
 | `fromCalendarTimezone` | `(date: Date, to?: string) => Date` | Date in target tz |
 | `formatInTimezone` | `(date: Date, tz?: string, options?: object) => string` | Formatted string |
-| `getTimezones` | `() => string[]` | IANA timezone list |
+| `getTimezones` | `() => Array<{ value: string, label: string, offset: string }>` | Timezone descriptors |
 
 ## Configuration Methods
 
@@ -89,8 +89,8 @@ new Calendar(config?: CalendarConfig)
 
 | Method | Signature | Returns |
 |--------|-----------|---------|
-| `getOverlapGroups` | `(date?: Date, tz?: string) => Event[][]` | Overlap groups |
-| `calculateEventPositions` | `(date?: Date, tz?: string) => Map` | Position map |
+| `getOverlapGroups` | `(date: Date, timedOnly = true) => Event[][]` | Overlap groups |
+| `calculateEventPositions` | `(events: Event[]) => Map` | Position map |
 
 ## Event System
 

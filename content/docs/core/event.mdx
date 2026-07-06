@@ -5,7 +5,7 @@ description: The Event class -- creation, validation, timezone support, attendee
 
 ## Overview
 
-The `Event` class represents a calendar event with full timezone support, attendee management, reminders, and category tagging. Events are created through `Event.normalize()` which assigns defaults and generates unique IDs.
+The `Event` class represents a calendar event with full timezone support, attendee management, reminders, and category tagging. Events are created through `Event.normalize()` which applies defaults and coerces field values.
 
 ```js
 import { Event } from '@forcecalendar/core';
@@ -22,14 +22,14 @@ const event = new Event({
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | `string` | Auto-generated | Unique identifier (`evt_` + random hex) |
-| `title` | `string` | `'Untitled Event'` | Event title |
+| `id` | `string` | `''` | Unique identifier (not auto-generated; assign your own) |
+| `title` | `string` | `''` | Event title |
 | `start` | `Date` | `new Date()` | Start date/time |
-| `end` | `Date` | Start + 1 hour | End date/time |
+| `end` | `Date` | Same as `start` | End date/time |
 | `allDay` | `boolean` | `false` | All-day event flag |
 | `description` | `string` | `''` | Event description |
 | `location` | `string` | `''` | Event location |
-| `color` | `string` | `'#4285f4'` | Primary color |
+| `color` | `string` | `null` | Primary color |
 | `backgroundColor` | `string` | `null` | Background override |
 | `borderColor` | `string` | `null` | Border override |
 | `textColor` | `string` | `null` | Text color override |
@@ -53,14 +53,14 @@ const event = new Event({
 
 ### Event.normalize(data)
 
-Normalize raw event data into a complete event object with defaults applied. Generates an `id` if not present, ensures `start` and `end` are Date objects, and applies default values.
+Normalize raw event data into a complete event object with defaults applied. Ensures `start` and `end` are Date objects (defaulting `end` to `start` when omitted), trims and length-limits string fields, and applies default values. It does **not** generate an `id` -- if none is provided, `id` defaults to an empty string.
 
 ```js
 const normalized = Event.normalize({
   title: 'Quick Event',
   start: '2026-03-01T09:00:00',
 });
-// { id: 'evt_a1b2c3...', title: 'Quick Event', start: Date, end: Date, ... }
+// { id: '', title: 'Quick Event', start: Date, end: Date, ... }
 ```
 
 ### Event.validate(data)
@@ -229,9 +229,9 @@ event.addReminder({
 });
 ```
 
-### removeReminder(index)
+### removeReminder(reminderId)
 
-Remove a reminder by its array index.
+Remove the reminder whose `id` matches. Returns `true` if a reminder was removed.
 
 ### getActiveReminders()
 

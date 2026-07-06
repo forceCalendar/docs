@@ -79,7 +79,7 @@ See [Event Model](/docs/core/event) for the full list of constructor properties.
 | Method | Signature | Returns |
 |--------|-----------|---------|
 | `addReminder` | `(reminder: object) => void` | — |
-| `removeReminder` | `(index: number) => void` | — |
+| `removeReminder` | `(reminderId: string) => void` | Removes the reminder whose `id` matches |
 | `getActiveReminders` | `() => object[]` | Active reminders |
 | `getReminderTriggerTimes` | `() => Date[]` | Trigger dates |
 

@@ -18,8 +18,8 @@ new ICSHandler(calendar: Calendar)
 | Method | Signature | Returns |
 |--------|-----------|---------|
 | `import` | `(input: string \| File, options?: ImportOptions) => Promise<ImportResult>` | Import result |
-| `export` | `(options?: ExportOptions) => Promise<string>` | ICS string |
-| `downloadAsFile` | `(filename?: string, options?: ExportOptions) => Promise<void>` | — |
+| `export` | `(options?: ExportOptions) => string` | ICS string (synchronous) |
+| `downloadAsFile` | `(filename?: string, options?: ExportOptions) => void` | — (synchronous) |
 | `importFromURL` | `(url: string, options?: ImportOptions) => Promise<ImportResult>` | Import result |
 | `subscribe` | `(url: string, options?: SubscribeOptions) => Subscription` | Subscription |
 | `validate` | `(icsString: string) => ValidationResult` | Validation result |

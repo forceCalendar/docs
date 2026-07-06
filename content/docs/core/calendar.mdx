@@ -193,7 +193,7 @@ const event = calendar.addEvent({
 // Returns the created Event instance
 ```
 
-Emits: `eventAdd` with the created `Event`.
+Emits: `eventAdd` with `{ event }`.
 
 ### updateEvent(eventId, updates)
 
@@ -206,7 +206,7 @@ calendar.updateEvent('evt_123', {
 });
 ```
 
-Emits: `eventUpdate` with `{ event, changes }`.
+Emits: `eventUpdate` with `{ event, oldEvent }`.
 
 ### removeEvent(eventId)
 
@@ -216,7 +216,7 @@ Remove an event by ID.
 calendar.removeEvent('evt_123');
 ```
 
-Emits: `eventRemove` with `{ eventId }`.
+Emits: `eventRemove` with `{ event }`.
 
 ### getEvent(eventId)
 
@@ -294,7 +294,7 @@ Change the calendar's timezone. All date comparisons and view rendering will use
 calendar.setTimezone('Asia/Tokyo');
 ```
 
-Emits: `timezoneChange` with `{ timezone, previous }`.
+Emits: `timezoneChange` with `{ timezone, previousTimezone }`.
 
 ### getTimezone()
 
@@ -330,7 +330,7 @@ Format a date in a specific timezone using `Intl.DateTimeFormat`.
 
 ### getTimezones()
 
-Returns a list of supported IANA timezone identifiers.
+Returns a list of common timezone descriptors as `Array<{ value, label, offset }>`, where `value` is the IANA identifier.
 
 ## Selection
 
@@ -342,7 +342,7 @@ Select an event (sets `selectedEventId` in state).
 calendar.selectEvent('evt_123');
 ```
 
-Emits: `eventSelect` with `{ eventId }`.
+Emits: `eventSelect` with `{ event }`.
 
 ### clearEventSelection()
 
@@ -368,21 +368,22 @@ Emits: `dateDeselect`.
 
 ## Conflict Detection
 
-### getOverlapGroups(date?, timezone?)
+### getOverlapGroups(date, timedOnly?)
 
-Get groups of overlapping events, optionally for a specific date.
+Get groups of overlapping events for a specific date. Pass `timedOnly = false` to include all-day events (defaults to `true`).
 
 ```js
 const groups = calendar.getOverlapGroups(new Date('2026-03-15'));
 // Returns array of arrays -- each inner array contains events that overlap each other
 ```
 
-### calculateEventPositions(date?, timezone?)
+### calculateEventPositions(events)
 
-Calculate horizontal positioning for overlapping events (for visual rendering in week/day views).
+Calculate horizontal positioning for an array of overlapping events (for visual rendering in week/day views).
 
 ```js
-const positions = calendar.calculateEventPositions(new Date('2026-03-15'));
+const events = calendar.getEventsForDate(new Date('2026-03-15'));
+const positions = calendar.calculateEventPositions(events);
 // Returns Map<eventId, { left, width, column, totalColumns }>
 ```
 
@@ -393,7 +394,7 @@ const positions = calendar.calculateEventPositions(new Date('2026-03-15'));
 Subscribe to calendar events.
 
 ```js
-calendar.on('eventAdd', (event) => { /* ... */ });
+calendar.on('eventAdd', ({ event }) => { /* ... */ });
 ```
 
 ### off(eventName, callback)
@@ -410,19 +411,19 @@ calendar.off('eventAdd', handler);
 |-------|---------|------|
 | `viewChange` | `{ view, date }` | View type changes |
 | `navigate` | `{ date, view, direction }` | Navigation occurs |
-| `eventAdd` | `Event` | Event is added |
-| `eventUpdate` | `{ event, changes }` | Event is updated |
-| `eventRemove` | `{ eventId }` | Event is removed |
+| `eventAdd` | `{ event }` | Event is added |
+| `eventUpdate` | `{ event, oldEvent }` | Event is updated |
+| `eventRemove` | `{ event }` | Event is removed |
 | `eventsSet` | `{ events }` | All events are replaced |
 | `stateChange` | `{ state }` | Any state change |
 | `eventStoreChange` | `{ type, event? }` | EventStore changes |
-| `timezoneChange` | `{ timezone, previous }` | Timezone changes |
+| `timezoneChange` | `{ timezone, previousTimezone }` | Timezone changes |
 | `localeChange` | `{ locale }` | Locale changes |
 | `weekStartsOnChange` | `{ weekStartsOn }` | Week start changes |
-| `eventSelect` | `{ eventId }` | Event selected |
-| `eventDeselect` | `{}` | Event deselected |
+| `eventSelect` | `{ event }` | Event selected |
+| `eventDeselect` | `{ eventId }` | Event deselected |
 | `dateSelect` | `{ date }` | Date selected |
-| `dateDeselect` | `{}` | Date deselected |
+| `dateDeselect` | `{ date }` | Date deselected |
 | `destroy` | `{}` | Calendar destroyed |
 
 ## Plugins
@@ -434,7 +435,7 @@ Register a plugin. Plugins are objects with an `install(calendar)` method.
 ```js
 calendar.use({
   install(cal) {
-    cal.on('eventAdd', (event) => {
+    cal.on('eventAdd', ({ event }) => {
       console.log('Plugin: event added', event.title);
     });
   },

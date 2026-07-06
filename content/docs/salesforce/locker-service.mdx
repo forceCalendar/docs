@@ -78,7 +78,7 @@ if (typeof Worker === 'undefined') {
 
 ```js
 this.dispatchEvent(new CustomEvent('calendar-navigate', {
-  detail: { date, view },
+  detail: { action, date },
   bubbles: true,
   composed: true, // Crosses Shadow DOM boundaries
 }));

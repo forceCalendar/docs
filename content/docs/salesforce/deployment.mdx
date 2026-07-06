@@ -8,7 +8,7 @@ description: Deploying forceCalendar to a Salesforce org -- static resources, me
 - Salesforce org with Lightning Experience enabled
 - System Administrator or developer permissions
 - Salesforce CLI (`sf`) installed locally
-- API version 58.0 or higher
+- API version 62.0 or higher
 
 ## Project Structure
 
@@ -27,27 +27,32 @@ salesforce/
                 │       ├── forceCalendar.html
                 │       └── forceCalendar.js-meta.xml
                 └── staticresources/
-                    ├── forceCalendarCore.js
-                    ├── forceCalendarCore.resource-meta.xml
-                    ├── forceCalendarInterface.js
-                    └── forceCalendarInterface.resource-meta.xml
+                    ├── forcecalendar.js
+                    └── forcecalendar.resource-meta.xml
 ```
 
-## Step 1: Build Static Resources
+## Step 1: Build the Static Resource
 
-Build the core and interface packages for deployment as Salesforce static resources.
+The LWC loads a single static resource named `forcecalendar` -- a combined bundle of `@forcecalendar/core` and `@forcecalendar/interface`:
+
+```js
+// forceCalendar.js (LWC)
+import { loadScript } from 'lightning/platformResourceLoader';
+import FORCECALENDAR_LIB from '@salesforce/resourceUrl/forcecalendar';
+
+// ...
+await loadScript(this, FORCECALENDAR_LIB);
+```
+
+Build the combined bundle from the interface package (which includes core), then copy it to `staticresources/` as `forcecalendar.js`:
 
 ```bash
-# In the core package directory
-cd /path/to/core
-npm run build  # Produces a single-file ESM bundle
-
 # In the interface package directory
 cd /path/to/interface
-npm run build  # Produces a single-file bundle
-```
+npm run build  # Produces a single-file UMD bundle including core
 
-Copy the built files to `staticresources/`.
+cp dist/force-calendar-interface.umd.js /path/to/salesforce/src/force-app/main/default/staticresources/forcecalendar.js
+```
 
 ## Step 2: Deploy to Org
 
@@ -88,27 +93,25 @@ The `forceCalendar.js-meta.xml` controls where the component can be placed:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>58.0</apiVersion>
+    <apiVersion>62.0</apiVersion>
     <isExposed>true</isExposed>
+    <masterLabel>Force Calendar</masterLabel>
+    <description>Enterprise Calendar Component for Salesforce</description>
     <targets>
-        <target>lightning__RecordPage</target>
         <target>lightning__AppPage</target>
+        <target>lightning__RecordPage</target>
         <target>lightning__HomePage</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__RecordPage">
-            <property name="currentView" type="String" default="month"
-                      label="Default View"
-                      description="Initial calendar view" />
-            <property name="height" type="String" default="600px"
-                      label="Height"
-                      description="Calendar height" />
-        </targetConfig>
         <targetConfig targets="lightning__AppPage,lightning__HomePage">
-            <property name="currentView" type="String" default="month"
-                      label="Default View" />
-            <property name="height" type="String" default="600px"
-                      label="Height" />
+            <property name="currentView" type="String" datasource="month,week,day" default="month" label="Default View"/>
+            <property name="height" type="String" default="800px" label="Calendar Height"/>
+            <property name="readOnly" type="Boolean" default="false" label="Read Only"/>
+        </targetConfig>
+        <targetConfig targets="lightning__RecordPage">
+            <property name="currentView" type="String" datasource="month,week,day" default="month" label="Default View"/>
+            <property name="height" type="String" default="800px" label="Calendar Height"/>
+            <property name="readOnly" type="Boolean" default="false" label="Read Only"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
@@ -158,7 +161,7 @@ private class ForceCalendarControllerTest {
         insert testEvent;
 
         Test.startTest();
-        List<Event> events = ForceCalendarController.getEvents(
+        List<Map<String, Object>> events = ForceCalendarController.getEvents(
             DateTime.now().addDays(-1),
             DateTime.now().addDays(1),
             null

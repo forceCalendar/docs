@@ -9,9 +9,9 @@ forceCalendar uses CSS custom properties (CSS variables) for theming. All variab
 
 ```css
 forcecal-main {
-  --fc-primary: #1a73e8;
-  --fc-bg: #ffffff;
-  --fc-text: #202124;
+  --fc-primary-color: #1a73e8;
+  --fc-background: #ffffff;
+  --fc-text-color: #202124;
   --fc-font-family: 'Inter', sans-serif;
 }
 ```
@@ -24,24 +24,24 @@ The `StyleUtils` class provides programmatic access to the theming system.
 import { StyleUtils } from '@forcecalendar/interface';
 ```
 
-### setCSSVariables(element, variables)
+### setCSSVariables(variables, element)
 
-Set multiple CSS variables on an element.
+Set multiple CSS variables on an element. `element` defaults to `document.documentElement`.
 
 ```js
-StyleUtils.setCSSVariables(calendarEl, {
-  '--fc-primary': '#1a73e8',
-  '--fc-bg': '#1e1e1e',
-  '--fc-text': '#e0e0e0',
-});
+StyleUtils.setCSSVariables({
+  '--fc-primary-color': '#1a73e8',
+  '--fc-background': '#1e1e1e',
+  '--fc-text-color': '#e0e0e0',
+}, calendarEl);
 ```
 
-### getCSSVariable(element, name)
+### getCSSVariable(name, element)
 
-Read a CSS variable value.
+Read a CSS variable value. `element` defaults to `document.documentElement`.
 
 ```js
-const primary = StyleUtils.getCSSVariable(calendarEl, '--fc-primary');
+const primary = StyleUtils.getCSSVariable('--fc-primary-color', calendarEl);
 ```
 
 ### Color Utilities
@@ -53,14 +53,15 @@ StyleUtils.getContrastColor('#4285f4'); // Returns '#ffffff' or '#000000'
 StyleUtils.hexToRgba('#4285f4', 0.5);  // 'rgba(66, 133, 244, 0.5)'
 ```
 
-### sanitizeColor(value)
+### sanitizeColor(color, fallback)
 
-Validates and sanitizes a CSS color value to prevent CSS injection. Strips anything that could be used for injection (e.g., `url()`, `expression()`).
+Validates and sanitizes a CSS color value to prevent CSS injection. Accepts hex colors, `var(--*)` references, `rgb()`/`rgba()` with numeric components, and a whitelist of safe color keywords. Invalid input returns the `fallback` value, which defaults to `'var(--fc-primary-color)'`.
 
 ```js
 StyleUtils.sanitizeColor('#4285f4');                    // '#4285f4'
-StyleUtils.sanitizeColor('url(evil)');                  // '' (rejected)
-StyleUtils.sanitizeColor('red; background: url(evil)'); // '' (rejected)
+StyleUtils.sanitizeColor('url(evil)');                  // 'var(--fc-primary-color)' (rejected)
+StyleUtils.sanitizeColor('red; background: url(evil)'); // 'var(--fc-primary-color)' (rejected)
+StyleUtils.sanitizeColor('bad-value', '#000000');       // '#000000' (custom fallback)
 ```
 
 ## CSS Variable Reference
@@ -69,99 +70,99 @@ StyleUtils.sanitizeColor('red; background: url(evil)'); // '' (rejected)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-primary` | `#4285f4` | Primary accent color |
-| `--fc-primary-hover` | `#3367d6` | Primary hover state |
-| `--fc-primary-light` | `#e8f0fe` | Light primary for backgrounds |
-| `--fc-bg` | `#ffffff` | Main background |
-| `--fc-bg-secondary` | `#f8f9fa` | Secondary background |
-| `--fc-bg-hover` | `#f1f3f4` | Hover background |
-| `--fc-bg-selected` | `#e8f0fe` | Selected item background |
-| `--fc-text` | `#202124` | Primary text color |
-| `--fc-text-secondary` | `#5f6368` | Secondary text |
-| `--fc-text-disabled` | `#80868b` | Disabled text |
-| `--fc-text-on-primary` | `#ffffff` | Text on primary color |
-| `--fc-border` | `#dadce0` | Border color |
-| `--fc-border-light` | `#e8eaed` | Light border |
-| `--fc-today-bg` | `#e8f0fe` | Today highlight background |
-| `--fc-today-text` | `#1a73e8` | Today text color |
-| `--fc-weekend-bg` | `#f8f9fa` | Weekend column background |
-| `--fc-event-default-bg` | `#4285f4` | Default event background |
-| `--fc-event-default-text` | `#ffffff` | Default event text |
-| `--fc-event-default-border` | `#3367d6` | Default event border |
+| `--fc-primary-color` | `#2563EB` | Primary accent color |
+| `--fc-primary-hover` | `#1D4ED8` | Primary hover state |
+| `--fc-primary-light` | `#EFF6FF` | Light primary for backgrounds |
+| `--fc-background` | `#FFFFFF` | Main background |
+| `--fc-background-alt` | `#FAFAFA` | Alternate background |
+| `--fc-background-hover` | `#F3F4F6` | Hover background |
+| `--fc-background-active` | `#E5E7EB` | Active/pressed background |
+| `--fc-text-color` | `#111827` | Primary text color |
+| `--fc-text-secondary` | `#6B7280` | Secondary text |
+| `--fc-text-light` | `#9CA3AF` | Light/muted text |
+| `--fc-border-color` | `#E5E7EB` | Border color |
+| `--fc-border-color-hover` | `#D1D5DB` | Border hover color |
+| `--fc-accent-color` | `#F59E0B` | Accent color |
+| `--fc-danger-color` | `#EF4444` | Danger/error color |
+| `--fc-success-color` | `#10B981` | Success color |
 
 ### Typography
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-font-family` | `system-ui, sans-serif` | Font family |
-| `--fc-font-size-sm` | `0.75rem` | Small text |
-| `--fc-font-size-base` | `0.875rem` | Base text |
-| `--fc-font-size-lg` | `1rem` | Large text |
-| `--fc-font-size-xl` | `1.25rem` | Extra large |
+| `--fc-font-family` | `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` | Font family |
+| `--fc-font-size-xs` | `11px` | Extra small text |
+| `--fc-font-size-sm` | `12px` | Small text |
+| `--fc-font-size-base` | `13px` | Base text |
+| `--fc-font-size-lg` | `15px` | Large text |
+| `--fc-font-size-xl` | `18px` | Extra large |
+| `--fc-font-size-2xl` | `24px` | Double extra large |
 | `--fc-font-weight-normal` | `400` | Normal weight |
 | `--fc-font-weight-medium` | `500` | Medium weight |
-| `--fc-font-weight-bold` | `600` | Bold weight |
-| `--fc-line-height` | `1.5` | Line height |
+| `--fc-font-weight-semibold` | `600` | Semibold weight |
+| `--fc-font-weight-bold` | `700` | Bold weight |
+| `--fc-line-height` | `1.4` | Line height |
 
 ### Spacing
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-spacing-xs` | `0.25rem` | Extra small |
-| `--fc-spacing-sm` | `0.5rem` | Small |
-| `--fc-spacing-md` | `0.75rem` | Medium |
-| `--fc-spacing-lg` | `1rem` | Large |
-| `--fc-spacing-xl` | `1.5rem` | Extra large |
+| `--fc-spacing-xs` | `2px` | Extra small |
+| `--fc-spacing-sm` | `6px` | Small |
+| `--fc-spacing-md` | `10px` | Medium |
+| `--fc-spacing-lg` | `14px` | Large |
+| `--fc-spacing-xl` | `20px` | Extra large |
+| `--fc-spacing-2xl` | `28px` | Double extra large |
 
 ### Borders
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-border-radius` | `4px` | Standard radius |
-| `--fc-border-radius-lg` | `8px` | Large radius |
 | `--fc-border-width` | `1px` | Border width |
+| `--fc-border-radius-sm` | `3px` | Small radius |
+| `--fc-border-radius` | `5px` | Standard radius |
+| `--fc-border-radius-lg` | `8px` | Large radius |
+| `--fc-border-radius-full` | `9999px` | Fully rounded |
 
 ### Shadows
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-shadow-sm` | `0 1px 2px rgba(0,0,0,0.1)` | Small shadow |
-| `--fc-shadow-md` | `0 2px 4px rgba(0,0,0,0.12)` | Medium shadow |
-| `--fc-shadow-lg` | `0 4px 8px rgba(0,0,0,0.15)` | Large shadow |
+| `--fc-shadow-sm` | `0 1px 1px rgba(0,0,0,0.05)` | Small shadow |
+| `--fc-shadow` | `0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)` | Standard shadow |
+| `--fc-shadow-md` | `0 4px 6px -1px rgba(0, 0, 0, 0.1)` | Medium shadow |
+| `--fc-shadow-lg` | `0 10px 15px -3px rgba(0, 0, 0, 0.1)` | Large shadow |
 
 ### Transitions
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-transition-fast` | `0.1s ease` | Fast transition |
-| `--fc-transition-normal` | `0.2s ease` | Normal transition |
-| `--fc-transition-slow` | `0.3s ease` | Slow transition |
+| `--fc-transition-fast` | `100ms ease-out` | Fast transition |
+| `--fc-transition` | `150ms ease-out` | Standard transition |
+| `--fc-transition-slow` | `250ms ease-out` | Slow transition |
 
 ### Z-Index
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--fc-z-base` | `1` | Base layer |
-| `--fc-z-dropdown` | `100` | Dropdowns |
-| `--fc-z-modal` | `200` | Modals |
-| `--fc-z-tooltip` | `300` | Tooltips |
+| `--fc-z-dropdown` | `1000` | Dropdowns |
+| `--fc-z-modal` | `2000` | Modals |
+| `--fc-z-tooltip` | `3000` | Tooltips |
 
 ## Dark Mode Example
 
 ```css
 forcecal-main.dark {
-  --fc-bg: #1e1e1e;
-  --fc-bg-secondary: #2d2d2d;
-  --fc-bg-hover: #3d3d3d;
-  --fc-bg-selected: #1a3a5c;
-  --fc-text: #e0e0e0;
+  --fc-background: #1e1e1e;
+  --fc-background-alt: #2d2d2d;
+  --fc-background-hover: #3d3d3d;
+  --fc-background-active: #1a3a5c;
+  --fc-text-color: #e0e0e0;
   --fc-text-secondary: #a0a0a0;
-  --fc-text-disabled: #666666;
-  --fc-border: #404040;
-  --fc-border-light: #333333;
-  --fc-today-bg: #1a3a5c;
-  --fc-today-text: #64b5f6;
-  --fc-weekend-bg: #252525;
+  --fc-text-light: #666666;
+  --fc-border-color: #404040;
+  --fc-border-color-hover: #555555;
+  --fc-primary-light: #1a3a5c;
   --fc-shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
   --fc-shadow-md: 0 2px 4px rgba(0,0,0,0.4);
 }
@@ -172,9 +173,9 @@ forcecal-main.dark {
 ```css
 @media (max-width: 768px) {
   forcecal-main {
-    --fc-font-size-base: 0.75rem;
-    --fc-spacing-md: 0.5rem;
-    --fc-spacing-lg: 0.75rem;
+    --fc-font-size-base: 12px;
+    --fc-spacing-md: 8px;
+    --fc-spacing-lg: 12px;
   }
 }
 ```
@@ -189,4 +190,4 @@ forcecal-main.dark {
 | `getButtonStyles()` | Button component styles |
 | `getGridStyles()` | Month/week/day grid styles |
 | `getAnimations()` | Keyframe animation definitions |
-| `mediaQuery(breakpoint)` | Generate responsive media queries |
+| `mediaQuery(breakpoint, styles)` | Wrap `styles` in a `min-width` media query for the named breakpoint |

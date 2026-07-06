@@ -13,15 +13,14 @@ The performance layer consists of three classes:
 | `PerformanceOptimizer` | Orchestrates caching, lazy indexing, metrics |
 | `AdaptiveMemoryManager` | Dynamically adjusts cache sizes based on memory pressure |
 
-These are used internally by `EnhancedCalendar` and `EventStore`. You can also use them directly for custom caching needs.
+These classes are internal utilities used by `EnhancedCalendar` and `EventStore` -- they are not exported from the `@forcecalendar/core` package entry point and cannot be imported directly. Their behavior is surfaced through higher-level APIs such as `calendar.eventStore.getPerformanceMetrics()` and EnhancedCalendar's performance methods. The method references below document how they work internally.
 
 ## LRUCache
 
 An O(1) LRU cache implementation using JavaScript `Map` insertion order semantics. When the cache is full, the least-recently-used entry is evicted.
 
 ```js
-import { LRUCache } from '@forcecalendar/core';
-
+// Internal — not importable from '@forcecalendar/core'
 const cache = new LRUCache(100); // maxSize = 100
 ```
 
@@ -56,8 +55,7 @@ cache.getStats();
 Manages three internal LRU caches and provides metrics collection and lazy indexing.
 
 ```js
-import { PerformanceOptimizer } from '@forcecalendar/core';
-
+// Internal — not importable from '@forcecalendar/core'
 const optimizer = new PerformanceOptimizer({
   eventCacheSize: 500,
   queryCacheSize: 100,
@@ -164,8 +162,7 @@ Clear all caches and metrics.
 Monitors memory usage and dynamically adjusts cache sizes to prevent out-of-memory conditions.
 
 ```js
-import { AdaptiveMemoryManager } from '@forcecalendar/core';
-
+// Internal — not importable from '@forcecalendar/core'
 const manager = new AdaptiveMemoryManager();
 ```
 

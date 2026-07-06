@@ -141,7 +141,7 @@ await handler.import(file);
 Export events as an ICS string.
 
 ```js
-const icsString = await handler.export({
+const icsString = handler.export({
   dateRange: {
     start: new Date('2026-03-01'),
     end: new Date('2026-03-31'),
@@ -158,7 +158,7 @@ const icsString = await handler.export({
 Export and trigger a browser download.
 
 ```js
-await handler.downloadAsFile('calendar.ics', {
+handler.downloadAsFile('calendar.ics', {
   calendarName: 'My Calendar',
 });
 ```
@@ -233,7 +233,7 @@ const now = new Date();
 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-await handler.downloadAsFile('monthly-calendar.ics', {
+handler.downloadAsFile('monthly-calendar.ics', {
   dateRange: { start: startOfMonth, end: endOfMonth },
   calendarName: 'Monthly Export',
 });

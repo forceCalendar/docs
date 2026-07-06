@@ -19,9 +19,11 @@ Timezone support is spread across three classes:
 
 A singleton class that caches timezone operations for performance.
 
+`TimezoneManager` is an internal class -- it is not exported from `@forcecalendar/core`. Access it through a calendar instance via `calendar.timezoneManager`, or use the `Calendar` wrapper methods (`convertTimezone`, `toCalendarTimezone`, `fromCalendarTimezone`, `formatInTimezone`, `getTimezones`) shown below.
+
 ```js
-// Accessed internally by Calendar
-const tz = TimezoneManager.getInstance();
+// Accessed via a Calendar instance
+const tz = calendar.timezoneManager;
 ```
 
 ### Key Methods
@@ -29,10 +31,10 @@ const tz = TimezoneManager.getInstance();
 | Method | Description |
 |--------|-------------|
 | `getSystemTimezone()` | Detect the system's IANA timezone |
-| `convert(date, from, to)` | Convert a date between timezones |
-| `getOffset(date, timezone)` | Get UTC offset in minutes |
-| `format(date, timezone, locale, options)` | Format in a timezone |
-| `getTimezones()` | List all supported IANA timezones |
+| `convertTimezone(date, from, to)` | Convert a date between timezones |
+| `getTimezoneOffset(date, timezone)` | Get UTC offset in minutes |
+| `formatInTimezone(date, timezone, options)` | Format in a timezone |
+| `getCommonTimezones()` | List common timezones as `Array<{ value, label, offset }>` |
 | `isValidTimezone(tz)` | Check if a timezone string is valid |
 
 ## Calendar Timezone API
@@ -50,7 +52,7 @@ calendar.setTimezone('Asia/Tokyo');
 When the timezone changes:
 - All date-based indices are recalculated
 - View data is regenerated
-- The `timezoneChange` event fires with `{ timezone, previous }`
+- The `timezoneChange` event fires with `{ timezone, previousTimezone }`
 
 ### getTimezone()
 
@@ -99,7 +101,7 @@ calendar.formatInTimezone(new Date(), 'Asia/Tokyo', {
 
 ### getTimezones()
 
-Returns an array of all supported IANA timezone identifiers.
+Returns an array of common timezone descriptors -- `Array<{ value, label, offset }>` -- where `value` is the IANA identifier. (Wraps `TimezoneManager.getCommonTimezones()`.)
 
 ## Event Timezone Support
 
@@ -158,11 +160,7 @@ DateUtils.addHoursWithDST(
 
 ## TimezoneDatabase
 
-Provides static data about IANA timezones:
-
-```js
-import { TimezoneDatabase } from '@forcecalendar/core';
-```
+Provides static data about IANA timezones. Like `TimezoneManager`, this class is internal and is not exported from `@forcecalendar/core` -- its data is surfaced through `calendar.getTimezones()` and `calendar.timezoneManager`.
 
 The database includes:
 - All IANA timezone identifiers

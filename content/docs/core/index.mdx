@@ -5,7 +5,7 @@ description: Architecture and module overview for @forcecalendar/core.
 
 ## Architecture
 
-`@forcecalendar/core` is the headless calendar engine. It has zero runtime dependencies and ships as pure ESM JavaScript. Every public class is exported from the main entry point at `core/index.js`.
+`@forcecalendar/core` is the headless calendar engine. It has zero runtime dependencies and ships as pure ESM JavaScript. The primary public classes are exported from the main entry point at `core/index.js`; some supporting classes -- `LRUCache`, `PerformanceOptimizer`, `AdaptiveMemoryManager`, `TimezoneManager`, `TimezoneDatabase`, and `ConflictDetector` -- are internal and not exported from the package.
 
 ```
 core/
