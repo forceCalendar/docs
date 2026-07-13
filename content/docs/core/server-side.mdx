@@ -1,0 +1,68 @@
+---
+title: Server-Side Scheduling
+description: Use the headless engine in Node, serverless functions, and edge runtimes
+---
+
+`@forcecalendar/core` is DOM-free, dependency-free, pure ES modules — it runs anywhere JavaScript does, including runtimes that ban `eval` and dynamic code such as Cloudflare Workers. That makes it a server-side scheduling engine, not just a UI companion.
+
+## What you can do server-side
+
+- **Expand recurrence rules** — turn an RFC 5545 RRULE into concrete occurrences for a date range
+- **Detect conflicts** — time, attendee, and resource overlap across event sets
+- **Import/export ICS** — parse calendar feeds and generate iCalendar files
+- **Search** — full-text queries across large event sets
+
+## Expanding recurrences in Node
+
+```js
+import { RecurrenceEngine } from '@forcecalendar/core';
+
+const occurrences = RecurrenceEngine.expandEvent(
+  {
+    id: 'standup',
+    title: 'Team Standup',
+    start: new Date('2026-01-05T09:00:00Z'),
+    end: new Date('2026-01-05T09:15:00Z'),
+    recurring: true,
+    recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR',
+    timeZone: 'America/New_York'
+  },
+  new Date('2026-01-01'),
+  new Date('2026-03-31'),
+  500 // max occurrences
+);
+// -> [{ start, end, recurringEventId, timezone, originalStart }, ...]
+```
+
+Daily and weekly rules use a numeric fast path (pure timestamp arithmetic between DST transitions), so expanding multi-year series takes fractions of a millisecond — safe inside request handlers.
+
+## Generating ICS
+
+```js
+import { Calendar, ICSHandler } from '@forcecalendar/core';
+
+const calendar = new Calendar({ timeZone: 'UTC' });
+calendar.addEvent({
+  id: 'evt-1',
+  title: 'Quarterly Review',
+  start: new Date('2026-04-01T14:00:00Z'),
+  end: new Date('2026-04-01T15:00:00Z'),
+  recurring: true,
+  recurrenceRule: 'FREQ=MONTHLY;INTERVAL=3;COUNT=4'
+});
+
+const ics = new ICSHandler(calendar).export({ calendarName: 'Reviews' });
+// -> "BEGIN:VCALENDAR..." — serve with Content-Type: text/calendar
+```
+
+## Edge runtimes
+
+The engine deploys to Cloudflare Workers unmodified — see the runnable
+[Worker example](https://github.com/forcecalendar/examples/tree/main/cloudflare-worker-scheduling),
+which exposes `/occurrences` and `/ics` endpoints and includes a smoke test.
+
+## Timezones
+
+Expansion is timezone-aware per occurrence: pass an IANA `timeZone` on the event
+(or as the fifth argument to `expandEvent`) and DST transitions are handled for
+you, including half-hour and 45-minute offset zones.

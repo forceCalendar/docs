@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "calendar",
+    "server-side",
     "enhanced-calendar",
     "event",
     "event-store",
