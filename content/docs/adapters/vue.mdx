@@ -1,0 +1,51 @@
+---
+title: Vue
+description: Use forceCalendar in Vue 3 and Nuxt with @forcecalendar/vue
+---
+
+`@forcecalendar/vue` is a thin adapter around the `<forcecal-main>` Web Component: props map to attributes, DOM events map to Vue emits. It has no dependencies beyond its peers.
+
+## Install
+
+```bash
+npm install @forcecalendar/vue @forcecalendar/core @forcecalendar/interface
+```
+
+## Use
+
+```vue
+<script setup>
+import { ForceCalendar } from '@forcecalendar/vue';
+</script>
+
+<template>
+  <ForceCalendar
+    view="month"
+    timezone="America/New_York"
+    height="600px"
+    @date-select="d => console.log('selected', d)"
+    @event-added="e => console.log('added', e)"
+  />
+</template>
+```
+
+## Props
+
+`view`, `date` (Date or string), `locale`, `timezone`, `weekStartsOn`, `height` — each maps to the corresponding element attribute.
+
+## Emits
+
+| Emit | Fired on |
+|---|---|
+| `event-added` | `calendar-event-added` |
+| `event-updated` | `calendar-event-updated` |
+| `event-deleted` | `calendar-event-deleted` |
+| `date-select` | `calendar-date-select` |
+| `view-change` | `calendar-view-change` |
+| `navigate` | `calendar-navigate` |
+
+Each emit receives the DOM event's `detail` object.
+
+## Nuxt / SSR
+
+The adapter is SSR-safe: custom elements register client-side only (inside `onMounted`), so server rendering emits the tag without touching browser APIs. No `<ClientOnly>` wrapper is needed.

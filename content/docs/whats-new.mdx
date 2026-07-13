@@ -1,0 +1,32 @@
+---
+title: What's New
+description: Release highlights across the forceCalendar packages
+---
+
+## July 2026: performance, types, accessibility, adapters
+
+The biggest release wave since 1.0. Everything below is live on npm.
+
+### Recurrence performance, fixed for real (core 2.1.70 → 2.3.0)
+
+Our own published benchmarks showed RRULE expansion up to 1,200x slower than the `rrule` library. Two releases fixed it:
+
+- **2.1.70** removed a timezone-cache pathology: the offset cache thrashed on multi-year series, rebuilding an `Intl.DateTimeFormat` for every occurrence. The worst case went from 209ms to under 1ms.
+- **2.3.0** added a numeric-iteration fast path: between DST transitions, daily and weekly stepping is pure timestamp arithmetic, with transition instants discovered by binary search and cached. Daily/weekly expansion now runs at roughly 2x of `rrule` (the [benchmark dashboard](https://benchmark.forcecalendar.org) tracks it publicly), with output verified byte-identical across 1,360 rule/timezone combinations.
+
+### TypeScript declarations everywhere (core 2.2.0, interface 1.2.0)
+
+Both packages now ship `.d.ts` files generated from their JSDoc: typed APIs and autocompletion for TypeScript consumers, with no rewrite of the zero-dependency JavaScript source. Along the way, `TimezoneManager` and `ConflictDetector` — documented but previously unreachable — became real exports.
+
+### Accessibility (interface 1.1.0)
+
+The month view now implements the WAI-ARIA grid pattern: roving tabindex, arrow-key navigation (with PageUp/PageDown month paging and focus preserved across re-renders), `aria-selected`/`aria-current`, and localized per-cell labels with event counts. Events in every view are keyboard-reachable labeled buttons, shell controls are labeled, and navigation is announced via a live region.
+
+### Framework adapters (new packages)
+
+- [`@forcecalendar/react`](/docs/adapters/react) — SSR-safe React wrapper; works in Next.js with no workarounds
+- [`@forcecalendar/vue`](/docs/adapters/vue) — SSR-safe Vue 3 wrapper; works in Nuxt out of the box
+
+### Runs where others can't
+
+A new [examples repository](https://github.com/forcecalendar/examples) with runnable starters for Cloudflare Workers (server-side scheduling at the edge), Chrome MV3 extensions, SharePoint SPFx, ServiceNow Service Portal, and Atlassian Forge — see the [platforms page](https://forcecalendar.org/platforms).

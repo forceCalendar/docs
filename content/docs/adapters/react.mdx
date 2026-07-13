@@ -1,0 +1,50 @@
+---
+title: React
+description: Use forceCalendar in React and Next.js with @forcecalendar/react
+---
+
+`@forcecalendar/react` is a thin adapter around the `<forcecal-main>` Web Component: props map to attributes, DOM events map to callbacks. It has no dependencies beyond its peers.
+
+## Install
+
+```bash
+npm install @forcecalendar/react @forcecalendar/core @forcecalendar/interface
+```
+
+## Use
+
+```tsx
+import { ForceCalendar } from '@forcecalendar/react';
+
+export default function Scheduling() {
+  return (
+    <ForceCalendar
+      view="month"
+      timezone="America/New_York"
+      height="600px"
+      onDateSelect={({ date }) => console.log('selected', date)}
+      onEventAdded={detail => console.log('added', detail)}
+    />
+  );
+}
+```
+
+## Props
+
+| Prop | Type | Maps to |
+|---|---|---|
+| `view` | `'month' \| 'week' \| 'day'` | `view` attribute |
+| `date` | `Date \| string` | `date` attribute (Dates are serialized to ISO) |
+| `locale` | `string` | `locale` attribute |
+| `timezone` | `string` | `timezone` attribute (IANA name) |
+| `weekStartsOn` | `0–6` | `week-starts-on` attribute |
+| `height` | `string` | `height` attribute |
+| `className`, `style` | — | passed through |
+
+## Callbacks
+
+`onEventAdded`, `onEventUpdated`, `onEventDeleted`, `onDateSelect`, `onViewChange`, `onNavigate` — each receives the `detail` object of the corresponding `calendar-*` DOM event.
+
+## Next.js / SSR
+
+The adapter is SSR-safe out of the box: the custom elements are registered client-side only (inside `useEffect`), so server rendering emits the tag without touching browser APIs. No `dynamic(() => ..., { ssr: false })` workaround is needed.
