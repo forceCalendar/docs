@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check:api": "node scripts/check-api-coverage.mjs",
+    "prebuild": "node scripts/check-api-coverage.mjs"
   },
   "dependencies": {
     "fumadocs-core": "^15.8.0",
@@ -16,6 +18,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@forcecalendar/core": "^2.3.0",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/mdx": "^2.0.13",
     "@types/node": "^22.0.0",

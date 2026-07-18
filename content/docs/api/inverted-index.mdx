@@ -1,0 +1,22 @@
+---
+title: InvertedIndex
+description: Term-to-event index powering fast full-text lookups
+---
+
+The in-memory index behind [`SearchWorkerManager`](/docs/api/search-worker-manager)'s synchronous fallback. Build it once per event set, then query.
+
+```js
+import { InvertedIndex } from '@forcecalendar/core';
+
+const index = new InvertedIndex();
+index.buildIndex(events);
+const hits = index.search('quarterly review', { fields: ['title', 'description'] });
+```
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `buildIndex(events)` | Tokenize and index an event array (replaces the previous index) |
+| `search(query, options?)` | Ranked matching events for a text query |
+| `tokenize(text)` | The tokenizer used for both indexing and queries |

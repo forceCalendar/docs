@@ -1,0 +1,28 @@
+---
+title: TimezoneManager
+description: IANA timezone conversions, DST detection, and offset math
+---
+
+Singleton service for timezone math. Shared by the Calendar, EventStore, and RecurrenceEngine so offset and transition caches are reused process-wide.
+
+```js
+import { TimezoneManager } from '@forcecalendar/core';
+
+const tz = TimezoneManager.getInstance();
+tz.getTimezoneOffset(new Date(), 'America/New_York'); // minutes from UTC
+```
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `static getInstance()` | The shared instance (use this, not `new`) |
+| `convertTimezone(date, fromTz, toTz)` | Convert a Date between IANA zones |
+| `getTimezoneOffset(date, timezone)` | Offset in minutes at that instant (cached per 15-minute bucket) |
+| `isDST(date, timezone)` | Whether the instant is in daylight-saving time |
+| `getNextTransition(timezone, fromMs, toMs)` | Timestamp of the zone's next offset change, or `Infinity` (cached per zone) |
+| `getCommonTimezones()` | `{ value, label, offset }` list for building pickers |
+| `getSystemTimezone()` | The host environment's IANA zone name |
+| `getTimezoneDifference(tz1, tz2, date?)` | Offset difference in minutes between two zones |
+| `clearCache()` | Reset offset, DST, and transition caches |
+| `getCacheStats()` | Hit/miss counters and cache sizes |

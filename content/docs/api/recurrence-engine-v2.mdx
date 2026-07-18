@@ -1,0 +1,24 @@
+---
+title: RecurrenceEngineV2
+description: Extended recurrence engine with modified instances and complex DST handling
+---
+
+Instance-based engine used by `EventStore` for expansion that must honor per-occurrence overrides. For plain RFC 5545 expansion, the static [`RecurrenceEngine`](/docs/api/recurrence-engine) is the faster path (numeric iteration for daily/weekly series).
+
+```js
+import { RecurrenceEngineV2 } from '@forcecalendar/core';
+
+const engine = new RecurrenceEngineV2();
+const occurrences = engine.expandEvent(event, rangeStart, rangeEnd, {
+  timezone: 'America/New_York'
+});
+```
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `expandEvent(event, rangeStart, rangeEnd, options?)` | Expand a recurring event; honors exceptions and modified instances |
+| `addModifiedInstance(eventId, occurrenceDate, modifications)` | Override a single occurrence (reschedule, retitle) without breaking the series |
+| `findDSTTransitions(start, end, timezone)` | DST transitions within a range |
+| `adjustForDST(start, end, timezone, transitions)` | Wall-clock correction across transitions |

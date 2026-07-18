@@ -15,6 +15,10 @@
     "event-search",
     "search-worker-manager",
     "performance-optimizer",
-    "lru-cache"
+    "lru-cache",
+    "timezone-manager",
+    "conflict-detector",
+    "recurrence-engine-v2",
+    "inverted-index"
   ]
 }

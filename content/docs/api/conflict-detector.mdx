@@ -1,0 +1,24 @@
+---
+title: ConflictDetector
+description: Time, attendee, and resource overlap detection across event sets
+---
+
+Detects scheduling conflicts against an `EventStore`. An instance is created automatically by every store (`store.conflictDetector`); construct one directly only for a store you manage yourself.
+
+```js
+import { EventStore } from '@forcecalendar/core';
+
+const store = new EventStore();
+const conflicts = store.conflictDetector.checkConflicts(candidateEvent);
+// -> [{ type: 'time' | 'attendee' | 'resource' | 'location', events: [...] }, ...]
+```
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `constructor(eventStore)` | Bind to a store |
+| `checkConflicts(event, options?)` | All conflicts the event would create; options include `bufferMinutes` and conflict-type toggles |
+| `checkEventPairConflicts(event1, event2, options?)` | Conflicts between two specific events |
+| `getBusyPeriods(attendeeEmails, start, end, options?)` | Merged busy intervals for a set of attendees |
+| `getFreePeriods(start, end, duration, options?)` | Open slots of at least `duration` minutes in a range |
