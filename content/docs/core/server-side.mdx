@@ -24,7 +24,7 @@ const upcoming = RecurrenceEngine.takeOccurrences(event, 3, {
 });
 ```
 
-This example deliberately uses UTC. Lazy queries avoid materializing an entire open-ended series, but still require explicit workload bounds. Do not assume every recurrence completes within a fixed request budget. See [iterator semantics](/docs/core/recurrence#lazy-occurrence-queries) and the [V2 cross-host DST limitation](/docs/core/recurrence#cross-host-dst-limitation).
+This example deliberately uses UTC. Lazy queries avoid materializing an entire open-ended series, but still require explicit workload bounds. Do not assume every recurrence completes within a fixed request budget. See [iterator semantics](/docs/core/recurrence#lazy-occurrence-queries) and the [V2 timezone contract and limits](/docs/core/recurrence#v2-timezone-contract).
 
 ## Generate an ICS snapshot
 

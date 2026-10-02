@@ -8,13 +8,13 @@ description: Install the documented release set and choose a supported runtime.
 For a reproducible baseline:
 
 ```bash
-npm install @forcecalendar/core@2.5.6 @forcecalendar/interface@1.9.0
+npm install @forcecalendar/core@2.5.7 @forcecalendar/interface@1.9.0
 ```
 
 Core alone is useful for server-side computation:
 
 ```bash
-npm install @forcecalendar/core@2.5.6
+npm install @forcecalendar/core@2.5.7
 ```
 
 Add the adapter for your framework:
@@ -67,7 +67,7 @@ See [Quick start](/docs/quick-start) for snapshot loading and [migration](/docs/
 
 ## Salesforce
 
-Use the Salesforce distribution or unlocked beta installer, not npm commands inside the org. Deploy matching LWC, Apex and static-resource versions together. The integration uses API 62.0 metadata and requires **Lightning Web Security**. Legacy Lightning Locker is unsupported.
+Use the Salesforce distribution or released unlocked installer, not npm commands inside the org. Deploy matching LWC, Apex and static-resource versions together. The integration uses API 62.0 metadata and requires **Lightning Web Security**. Legacy Lightning Locker is unsupported.
 
 Follow [deployment](/docs/salesforce/deployment), then select the minimum appropriate [permissions](/docs/salesforce/permissions). No permission set is assigned automatically.
 
@@ -79,4 +79,4 @@ Test your actual browser and host policies. In particular:
 - The grid and visible range use the browser's local timezone even when `timezone` is configured.
 - An SSR-safe adapter does not make browser-only imperative methods callable on the server.
 - Read-only UI is separate from server authorization.
-- Agent/provider integrations have their own [pre-release boundaries](/docs/agent).
+- [Headless tool integrations](/docs/agent) use the host application's persistence and authorization; the Core library does not supply a remote calendar service.

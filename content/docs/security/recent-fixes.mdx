@@ -5,7 +5,7 @@ description: Implemented defenses and honest limits on audit and release claims.
 
 ## Current documentation baseline
 
-This page describes the Core 2.5.6 / Interface 1.9.0 release set and Salesforce 0.3 beta. It does not declare that every critical/high issue across every dependency and deployment has been eliminated.
+This page describes the Core 2.5.7 / Interface 1.9.0 release set and Salesforce 0.3.0.1 release. It does not declare that every critical/high issue across every dependency and deployment has been eliminated.
 
 ## Implemented defenses
 
@@ -21,9 +21,9 @@ Each protects a specific boundary. URL checks do not replace egress controls; cl
 
 ## Verification still matters
 
-The October package work includes automated Core/Interface/adapter checks and specific live Salesforce synthetic CRUD/date workflows. The Salesforce beta has not been promoted. An actual restricted-user browser session remains a rollout check. The [agent provider integrations](/docs/agent) have mocked tests rather than live two-way account validation.
+The October package work includes automated Core/Interface/adapter checks and specific live Salesforce synthetic CRUD/date workflows. Salesforce 0.3.0.1 is promoted; installation into a production org is a separate action. An actual restricted-user browser session remains a rollout check. Application-exposed calendar tools need their own [host authorization and persistence controls](/docs/agent).
 
-A separate [cross-host DST recurrence issue](/docs/core/recurrence#cross-host-dst-limitation) was discovered during benchmarking. Correctness results take precedence over performance comparisons.
+Core 2.5.7 corrects the [V2 cross-host recurrence issue](/docs/core/recurrence#v2-timezone-contract) discovered during benchmarking. The scope and remaining timezone/override limits are explicit. Correctness results take precedence over performance comparisons.
 
 Check the [audit dashboard](https://audit.forcecalendar.org) and repository CI for their date, commit and scope. An audit showing no known advisories at one time is not a guarantee that new advisories cannot appear.
 

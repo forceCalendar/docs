@@ -1,11 +1,13 @@
 ---
 title: Installation and Deployment
-description: Salesforce beta installation, source deployment, compatibility, and rollout checks.
+description: Released Salesforce installer, source deployment, compatibility, and rollout checks.
 ---
 
 ## Release status
 
-Unlocked package **0.3.0.1** (`04tg5000000ExTFAA0`) is a **beta**, not a promoted production release. It bundles Core 2.5.6 and Interface 1.9.0 and includes Reader/Editor permission sets. Package creation reported **98% Apex coverage**. A clean disposable-org install succeeded. All **32 Apex test methods plus test setup** passed with no failures or skips; the test run reported **99% coverage**. Retrieved source/resource contents matched exactly, and all three permission sets matched semantically, including the five Event fields and three shared Task fields in Reader/Editor. Package coverage and test-run coverage are different measurements.
+Unlocked package **0.3.0.1** (`04tg5000000ExTFAA0`) is **released**: promotion was completed and independently read back as `IsReleased=true`. It bundles Core 2.5.6 and Interface 1.9.0 and includes Reader/Editor permission sets. Package creation reported **98% Apex coverage**. A clean disposable-org install succeeded. All **32 Apex test methods plus test setup** passed with no failures or skips; the test run reported **99% coverage**. Retrieved source/resource contents matched exactly, and all three permission sets matched semantically, including the five Event fields and three shared Task fields in Reader/Editor. Package coverage and test-run coverage are different measurements.
+
+This exact installer still contains **Core 2.5.6**. The separately published **Core 2.5.7** V2 timezone correction is not retroactively part of this package. Native Salesforce recurrence remains read-only in the integration; keep the documented package and recurrence boundaries when evaluating an upgrade.
 
 Older 0.2 betas do not include the current editor, date transport or Reader/Editor sets. Do not infer their contents from a newer source README.
 
@@ -18,15 +20,20 @@ Older 0.2 betas do not include the current editor, date transport or Reader/Edit
 
 Legacy Lightning Locker is unsupported. Do not work around a missing custom-element API by weakening browser or org security.
 
-## Option A: install the unlocked beta
+## Option A: install the released unlocked package
 
-Evaluate the beta in a sandbox or disposable org first:
+Evaluate the release in a sandbox or disposable org before production rollout. Use the official installer for the target environment:
+
+- [Production or Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tg5000000ExTFAA0)
+- [Sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tg5000000ExTFAA0)
+
+Or use Salesforce CLI:
 
 ```bash
 sf package install --package 04tg5000000ExTFAA0 --target-org your-org-alias --wait 20
 ```
 
-Review the CLI prompts and package details before installation. Installing does not automatically assign the optional permission sets or activate a Lightning page. Beta installation and production promotion are separate actions; this guide does not announce a promotion.
+Review the CLI prompts and package details before installation. Installing does not automatically assign the optional permission sets or activate a Lightning page. The version is promoted, but installing it into any org is a separate administration action. No production-org installation is implied by the release or its clean-org verification.
 
 ## Option B: deploy the source distribution
 

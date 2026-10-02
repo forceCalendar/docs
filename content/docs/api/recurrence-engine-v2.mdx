@@ -27,4 +27,4 @@ const occurrences = engine.expandEvent(event, rangeStart, rangeEnd, {
 
 `iterateOccurrences(event, options?)`, `nextOccurrence(event, after?, options?)` and `takeOccurrences(event, count, options?)` are instance methods. See [bounds and semantics](/docs/core/recurrence#lazy-occurrence-queries).
 
-Core 2.5.6 has a [known cross-host DST limitation](/docs/core/recurrence#cross-host-dst-limitation). Modified instances and timezone support do not imply universal recurrence conformance.
+Core 2.5.7 corrects [V2 named-zone stepping](/docs/core/recurrence#v2-timezone-contract). Legacy UTC metadata, moved-instance query bounds and ancient-date limits remain. Modified instances and timezone support do not imply universal recurrence conformance.

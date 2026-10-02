@@ -49,6 +49,6 @@ All-day values are civil dates, not instants: local start-of-day through the inc
 
 ## Recurrence and DST
 
-Core 2.5.6 has a known `RecurrenceEngineV2` cross-host DST drift when the host zone differs from the event zone. See [recurrence status](/docs/core/recurrence#cross-host-dst-limitation). A future scoped recurrence fix must not be interpreted as a redesign of every legacy conversion API.
+Core 2.5.7 corrects `RecurrenceEngineV2` calendar stepping in the named recurrence zone across host timezones. Use generated `start`/`end` for that contract. Legacy `startUTC`/`endUTC` metadata, conversion helpers, moved-instance bounds and ancient-date limits remain. See the [V2 timezone contract](/docs/core/recurrence#v2-timezone-contract). This is a scoped recurrence correction, not a redesign of every conversion API.
 
 Test the host timezone, event timezone, clock gaps/overlaps, exception dates and query bounds relevant to the deployment. Host `Intl` data may differ between runtime versions; keep runtimes maintained.

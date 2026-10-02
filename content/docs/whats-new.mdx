@@ -1,17 +1,17 @@
 ---
 title: What's New
-description: Released changes, beta capabilities, and current verification limits.
+description: Released changes, installer status, and current verification limits.
 ---
 
 ## October 2026 release update
 
-This documentation snapshot covers Core **2.5.6**, Interface **1.9.0**, and React/Vue **0.3.1**, which are published npm packages. Salesforce **0.3** is a beta integration. Agent calendaring remains a private pre-release prototype.
+This documentation snapshot covers Core **2.5.7**, Interface **1.9.0**, and React/Vue **0.3.1**, which are published npm packages. Salesforce unlocked package **0.3.0.1** is promoted and released.
 
-### Core: event fidelity and lifecycle
+### Core: named-zone recurrence, event fidelity and lifecycle
 
 Core 2.5.6 preserves `endTimeZone` through `Event.clone()` and `toObject()`. Recent 2.5 releases also support full-field snapshot comparisons, stable recurring occurrence identity, lazy iterator/next/take queries, and calendar teardown. Core `reconcileEvents()` preserves unchanged event instances; Core `setEvents()` still clears/reloads unless `{ reconcile: true }` is requested. Always call `destroy()` when a server-side or long-lived calendar instance is no longer needed. See [event data](/docs/core/event) and [migration](/docs/migration).
 
-A separate cross-host daylight-saving regression in `RecurrenceEngineV2` was found during the October benchmark pass. Do not interpret successful local-timezone tests or older benchmark ratios as universal recurrence correctness. Follow the [current limitation](/docs/core/recurrence#cross-host-dst-limitation) before production adoption.
+Core **2.5.7** fixes the V2 cross-host DST regression found during benchmarking. Calendar steps, floating RRULE dates and generated occurrence bounds use the recurrence zone. The release includes 696 fixture/host regression combinations. The [V2 contract](/docs/core/recurrence#v2-timezone-contract) preserves important limits: legacy UTC metadata/conversions, moved-instance bounds/order, ancient dates and unchanged RRULE feature coverage. Historical benchmark speed ratios are not universal correctness evidence.
 
 ### Interface: details, editing and confirmed deletion
 
@@ -27,17 +27,17 @@ The 1.9 release candidate passed 291 Interface tests. Browser and Salesforce val
 
 ### React and Vue: complete host integration
 
-Adapters 0.3.1 expose `events` snapshots, range loading callbacks, typed imperative handles, and `readOnly`. They register custom elements on the client for SSR. Use the [React](/docs/adapters/react) or [Vue](/docs/adapters/vue) guide for the complete callback/emit contract and readiness handling.
+Adapters 0.3.1 expose `events` snapshots, range loading callbacks, typed imperative handles, and `readOnly`. They register custom elements on the client for SSR. The actual published adapter artifacts passed against Core 2.5.7 / Interface 1.9.0: React 0.3.1 passed 37 tests on each of React 18 and React 19, and Vue 0.3.1 passed 33 tests, with Bundler/NodeNext type checks. Use the [React](/docs/adapters/react) or [Vue](/docs/adapters/vue) guide for the complete callback/emit contract and readiness handling.
 
 ### Salesforce: real Event persistence and optional roles
 
 The 0.3 integration bundles Core 2.5.6 and Interface 1.9.0. It includes existing-event editing/deletion, record-context associations, explicit all-day civil-date transport, snapshot loading without write feedback, and optional Access/Reader/Editor sets. Lightning Web Security is required.
 
-Synthetic live Event tests verified create/read/edit/delete, cancellation, refresh/navigation persistence, same-day and multi-day all-day events, and all-day-to-timed conversion. Fixtures were removed. Restricted-user behavior is covered by isolated Apex tests; a restricted-user Lightning browser session has not been verified. See [installation](/docs/salesforce/deployment) and [permissions](/docs/salesforce/permissions) for beta status and deployment checks.
+Synthetic live Event tests verified create/read/edit/delete, cancellation, refresh/navigation persistence, same-day and multi-day all-day events, and all-day-to-timed conversion. Fixtures were removed. Restricted-user behavior is covered by isolated Apex tests; a restricted-user Lightning browser session has not been verified. See [installation](/docs/salesforce/deployment) and [permissions](/docs/salesforce/permissions) for the released installer and deployment checks.
 
-### Human and agent calendars
+### Headless integration guidance
 
-The [agent calendar prototype](/docs/agent) adds durable calendars, role-scoped stdio MCP tools, SQLite persistence, revision/idempotency controls, and authenticated ICS-feed building blocks. Google/Microsoft integration tests use mocks; real provider credentials and two-way synchronization are not validated. A hosted pilot has verified authenticated reading only, not calendar writes.
+The [headless API guide](/docs/agent) explains how to expose published calendar operations through an application's existing tools and backend. Integrators choose persistence, users and access controls. Agents can read and change calendar data within those permissions; forceCalendar does not choose or execute their work.
 
 ## Earlier releases
 

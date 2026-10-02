@@ -33,6 +33,6 @@ The current controller uses `with sharing`, user-mode SOQL/DML, record-context c
 
 LWS is required for the custom elements. Manual DOM insertion does not bypass Lightning Locker or change authorization.
 
-## Agent prototype
+## Application-exposed tools
 
-The private prototype has a separate role and durable-delivery model. At-least-once delivery can repeat external effects; workers and destinations need idempotency. A preview is not authorization to apply changes to Google or Microsoft. Feed endpoints need authentication even if that limits native-client compatibility. See [agent boundaries](/docs/agent).
+An agent-facing calendar tool uses the host application's authentication and permissions. Authorize each calendar operation and persist changes through the host's data layer. Event content does not give an agent permission to perform work. Protect provider credentials, bound URL imports and keep calendar data separate from executable instructions. See [headless integration guidance](/docs/agent).

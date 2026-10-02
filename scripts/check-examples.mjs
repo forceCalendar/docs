@@ -14,6 +14,17 @@ for (const zone of ['UTC', 'America/Los_Angeles', 'Asia/Kolkata', 'Pacific/Auckl
   });
   assert.equal(run.status, 0, `${zone}: ${run.stderr}`);
 }
+// Execute the published V2 DST example independently on different host zones.
+const recurrenceGuide = readFileSync('content/docs/core/recurrence.mdx', 'utf8');
+const recurrenceSnippet = recurrenceGuide.split('## V2 timezone contract')[1].match(/```js\n([\s\S]*?)```/)[1];
+const expectedStarts = ['2026-03-06T14:00:00.000Z', '2026-03-07T14:00:00.000Z', '2026-03-08T13:00:00.000Z', '2026-03-09T13:00:00.000Z', '2026-03-10T13:00:00.000Z'];
+for (const zone of ['UTC', 'America/Los_Angeles', 'Asia/Kolkata', 'Australia/Melbourne']) {
+  const check = recurrenceSnippet + '\nimport assert from "node:assert/strict"; assert.deepEqual(occurrences.map(o => o.start.toISOString()), ' + JSON.stringify(expectedStarts) + ');';
+  const run = spawnSync(process.execPath, ['--input-type=module', '-e', check], {
+    encoding: 'utf8', env: { ...process.env, TZ: zone }, timeout: 10000,
+  });
+  assert.equal(run.status, 0, `V2 recurrence ${zone}: ${run.stderr}`);
+}
 const row = { id: 'planning', title: 'Planning', start: new Date(2026, 9, 5, 9), end: new Date(2026, 9, 5, 10) };
 const calendar = new Calendar();
 try {

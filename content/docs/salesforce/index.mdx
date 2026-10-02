@@ -3,7 +3,7 @@ title: Salesforce Overview
 description: LWC and Apex integration over Salesforce Event, requiring Lightning Web Security.
 ---
 
-The Salesforce integration connects the Interface Web Component to the standard `Event` object through an LWC and Apex controller. It is a **beta** release, separate from the npm packages.
+The Salesforce integration connects the Interface Web Component to the standard `Event` object through an LWC and Apex controller. Unlocked package **0.3.0.1** is released, with a separate version/bundle lifecycle from the npm packages.
 
 **Lightning Web Security is required.** Legacy Lightning Locker does not support the third-party custom elements used here. See [LWS compatibility](/docs/salesforce/locker-service).
 
@@ -38,4 +38,4 @@ Fetched snapshots do not trigger Apex writes. Writes retain record identity, que
 
 The October 0.3 candidate passed 38 LWC tests in UTC, Los Angeles, Kolkata and Auckland using the real bundled Interface with mocked Apex transport. Isolated Apex tests exercise actual Reader/Editor sets, denial paths and sharing. Live synthetic Event tests verified timed CRUD, cancellation, refresh/navigation, inclusive all-day dates and all-day-to-timed conversion; fixtures were removed.
 
-A restricted-user Lightning browser session and live forced network-failure scenario have not been verified. There is no comprehensive security audit or assistive-technology certification claim. See the [source verification record](https://github.com/forceCalendar/salesforce/blob/2148bb4f/docs/VERIFICATION.md) and [beta installation status](/docs/salesforce/deployment).
+A restricted-user Lightning browser session and live forced network-failure scenario have not been verified. There is no comprehensive security audit or assistive-technology certification claim. See the [source verification record](https://github.com/forceCalendar/salesforce/blob/93d9f8a/docs/VERIFICATION.md) and [released installer and verification](/docs/salesforce/deployment).

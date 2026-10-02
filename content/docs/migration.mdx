@@ -5,7 +5,7 @@ description: Upgrade guidance for package versions, snapshots, events, dates, SS
 
 ## Recommended release set
 
-Use Core **2.5.6**, Interface **1.9.0**, and React/Vue **0.3.1** together. Pin versions for rollout, commit the lockfile, and test your actual persistence callbacks before deployment. Salesforce 0.3 uses a matching bundled resource and remains beta.
+Use Core **2.5.7**, Interface **1.9.0**, and React/Vue **0.3.1** together. Pin versions for rollout, commit the lockfile, and test your actual persistence callbacks before deployment. Salesforce 0.3.0.1 is released with a frozen Core 2.5.6 / Interface 1.9.0 bundle; the separate Core 2.5.7 npm release does not change that installer.
 
 ## Snapshot loading replaces CRUD loops
 
@@ -40,7 +40,7 @@ If your backend has no color field, set `showColorPicker = false` or `show-color
 - External APIs and ICS often use an exclusive end date. Convert explicitly with calendar-day arithmetic; never assume every day lasts 24 hours.
 - The Salesforce adapter has separate `startDate`/`lastDay` civil-date transport. Its native UTC-date representation must not be shifted through the browser timezone or corrected by blindly subtracting a day.
 - `getVisibleRange()` has an inclusive end and uses the browser's local timezone. The Interface `timezone` attribute does not make the grid render in an arbitrary IANA zone.
-- Core 2.5.6 preserves `endTimeZone` during clone/serialization. A [cross-host V2 recurrence issue](/docs/core/recurrence#cross-host-dst-limitation) remains a release boundary; validate recurrence in both the event zone and the deployment host zone.
+- Core 2.5.6 preserves `endTimeZone` during clone/serialization. Core 2.5.7 corrects [V2 named-zone stepping](/docs/core/recurrence#v2-timezone-contract) across host timezones. Legacy UTC metadata, moved-instance bounds and ancient-date limits remain separate; validate the API contract your integration uses.
 
 ## Lifecycle and SSR
 
@@ -51,3 +51,11 @@ Adapters register on the client. Await the ref's `whenReady()` before imperative
 ## Salesforce upgrade
 
 Deploy LWC, Apex and static resources together. The 0.3 LWC calls date-aware `createCalendarEvent`/`updateCalendarEvent`; installing only its JavaScript against an older controller is unsupported. Enable LWS, select an optional permission set deliberately, and test as intended users. Native Salesforce recurrence remains managed in Salesforce Calendar. See [deployment](/docs/salesforce/deployment).
+
+## Core 2.5.7 recurrence behavior
+
+V2 steps the calendar in the explicit recurrence zone, falling back to the event zone and then UTC. Use returned `start`/`end` as the generated occurrence instants. The legacy `startUTC`/`endUTC` fields and conversion helpers were not redesigned.
+
+`handleDST` remains accepted, but `true` and `false` now return the same correctly resolved instants: it previously toggled an additional post-step adjustment, not elapsed-duration arithmetic. Calendar increments advance through nonexistent local times and choose the earlier instant in an overlap. An adjusted gap time carries into subsequent steps.
+
+Explicit invalid zones now throw from stepping helpers such as `getNextDate`; previously those helpers ignored the zone. Stored overrides still apply after generated-start range filtering, and ancient-date/parser limits remain. Read the full [V2 contract](/docs/core/recurrence#v2-timezone-contract) before migrating integrations that relied on those details.

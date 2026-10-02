@@ -3,18 +3,17 @@ title: Introduction
 description: Calendar infrastructure for the web, frameworks, and Salesforce Lightning Web Security.
 ---
 
-forceCalendar separates calendar logic, presentation and platform persistence. Choose the layer you need:
+forceCalendar is a calendar library with a headless engine, optional visual interfaces and platform integrations. Applications and agents can use the same calendar APIs; agents decide what to do with them. Choose the layer you need:
 
 | Layer | Current documented version | What it provides |
 | --- | --- | --- |
-| [Core](/docs/core) | 2.5.6 | Headless events, recurrence, search, timezone utilities and ICS |
+| [Core](/docs/core) | 2.5.7 | Headless events, recurrence, search, timezone utilities and ICS |
 | [Interface](/docs/interface) | 1.9.0 | Month/week/day Web Components, snapshots, selection and event editing |
 | [React](/docs/adapters/react) | 0.3.1 | Typed props, callbacks, refs and client-side registration |
 | [Vue](/docs/adapters/vue) | 0.3.1 | Typed props, emits, template refs and client-side registration |
-| [Salesforce](/docs/salesforce) | 0.3 beta | LWC, Apex persistence and optional Reader/Editor permission sets |
-| [Agent calendars](/docs/agent) | Private pre-release | Durable shared calendars and scoped agent tools; availability is limited |
+| [Salesforce](/docs/salesforce) | 0.3.0.1 released | LWC, Apex persistence and optional Reader/Editor permission sets |
 
-Versions and verification boundaries are summarized in [What's new](/docs/whats-new). The npm packages and the Salesforce beta have different release processes.
+Versions and verification boundaries are summarized in [What's new](/docs/whats-new). The npm packages and the Salesforce installer have different release processes.
 
 ## Start with a working integration
 
@@ -23,6 +22,7 @@ Versions and verification boundaries are summarized in [What's new](/docs/whats-
 - [Migration](/docs/migration): snapshots, read-only behavior, dates and lifecycle changes
 - [Salesforce installation](/docs/salesforce/deployment): supported environment and deployment choices
 - [Permissions](/docs/salesforce/permissions): least-privilege setup and its platform-wide effects
+- [Headless integrations](/docs/agent): expose calendar APIs through your application
 - [API reference](/docs/api): public Core APIs and labeled internal utilities
 
 ## Design and boundaries
@@ -35,6 +35,6 @@ Versions and verification boundaries are summarized in [What's new](/docs/whats-
 
 **Dates are an integration contract.** Timed events, inclusive all-day civil dates, visible-range ends and provider-exclusive end dates are different concepts. Read the [date guidance](/docs/migration#dates-and-timezones) before adapting an external calendar. The Interface grid and visible range currently use the browser's local timezone; setting `timezone` does not turn them into an arbitrary-zone grid.
 
-**Recurrence is bounded.** Core implements RFC 5545 recurrence features, with explicit resource limits and known edge cases. Built-in recurring-event mutation is disabled until a series/occurrence scope workflow exists. See [recurrence](/docs/core/recurrence) for the current cross-host DST limitation.
+**Recurrence is bounded.** Core implements RFC 5545 recurrence features, with explicit resource limits and known edge cases. Built-in recurring-event mutation is disabled until a series/occurrence scope workflow exists. See [recurrence](/docs/core/recurrence) for the V2 named-zone contract and remaining limits.
 
 **Verify your environment.** Shipped tests cover specific paths, not every browser, Salesforce org, assistive technology or external provider. See [security](/docs/security) and the component guides for the remaining boundaries.

@@ -274,13 +274,38 @@ const nextTwo = RecurrenceEngine.takeOccurrences(event, 2, {
 
 EventStore exposes `iterateOccurrences(eventId, options)`, `getNextOccurrence(eventId, after, options)` and `takeOccurrences(eventId, count, options)` against stored masters, using V2 by default.
 
-## Cross-host DST limitation
+## V2 timezone contract
 
-In Core **2.5.6**, `RecurrenceEngineV2` can drift when the host timezone differs from the event's named timezone across daylight-saving transitions. This affects a correctness boundary used by EventStore and EnhancedCalendar. A fix is under validation but is not part of this documented release baseline.
+Core **2.5.7** corrects V2's cross-host DST stepping. `options.timezone`, then `event.timeZone`, then UTC determines the calendar-step zone; `event.start` anchors the series. Generated `start` and `end` are occurrence instants. This covers V2, the default engine used by EventStore, and V2-based EnhancedCalendar expansion.
 
-Test your event zones, runtime host zones, date boundaries, exceptions and modified instances before relying on recurrence. Do not infer correctness from a benchmark speed result. Legacy `startUTC`/`endUTC` metadata and conversion helpers have their own wall-clock conventions; a recurrence fix must not be described as a redesign of all timezone APIs.
+```js
+import { RecurrenceEngineV2 } from '@forcecalendar/core';
+const event = {
+  id: 'ny-daily', title: 'Daily review', recurring: true,
+  start: new Date('2026-03-06T09:00:00-05:00'),
+  end: new Date('2026-03-06T09:30:00-05:00'),
+  timeZone: 'America/New_York', recurrenceRule: 'FREQ=DAILY;COUNT=5',
+};
+const occurrences = new RecurrenceEngineV2().takeOccurrences(event, 5, {
+  after: event.start, inclusive: true, timezone: 'America/New_York',
+});
+console.log(occurrences.map(({ start }) => start.toISOString()));
+// March 6–7 at 14:00Z, March 8–10 at 13:00Z: 09:00 in New York.
+```
 
-Interface intentionally disallows built-in recurring edit/delete/drag/resize until an explicit series/occurrence workflow is supported.
+- Daily, weekly, monthly, yearly and subdaily calendar steps resolve in the recurrence zone. A nonexistent local time advances through the DST gap; that adjusted clock time carries forward. An overlap chooses the earlier instant. Subdaily calendar increments are not constant elapsed-duration increments.
+- Before instance overrides, duration remains the original `end - start` milliseconds. An override can change duration.
+- Floating RRULE `UNTIL`/`EXDATE` strings use the recurrence zone; `Z` values remain UTC. Date-based exception and modification matching uses that zone's calendar date.
+- `handleDST` is retained for compatibility; `true` and `false` now yield the same resolved instants. The option never selected elapsed-duration stepping.
+- Explicit invalid zones are rejected by helpers such as `getNextDate`; omitted zones retain local Date behavior in those helpers.
+
+The release was checked with 696 fixture/host combinations, plus the published package's runtime verification. That is scoped regression evidence, not complete RFC conformance. See the [released contract](https://github.com/forceCalendar/core/blob/v2.5.7/docs/recurrence-timezones.md).
+
+### Remaining limits
+
+`startUTC`/`endUTC` metadata still uses legacy conversions that may depend on the host timezone. Use `start`/`end` for the occurrence instants covered above. The legacy static `RecurrenceEngine` and every timezone API have not been redesigned.
+
+Year 0000/BCE offset handling and UTC-suffixed RRULE years 0000–0099 retain known limitations. Month-end selection and supported RRULE fields are unchanged. Interface still disables built-in recurring edit/delete/drag/resize until an explicit series/occurrence workflow is supported.
 
 ## Modified-instance query boundary
 
