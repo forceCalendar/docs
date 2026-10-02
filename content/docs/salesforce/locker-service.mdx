@@ -1,122 +1,26 @@
 ---
-title: Locker Service Compatibility
-description: How forceCalendar maintains compatibility with Salesforce Lightning Locker Service.
+title: Lightning Web Security
+description: Required LWS configuration and why legacy Lightning Locker is unsupported.
 ---
 
-## What is Locker Service?
+## LWS is required
 
-Lightning Locker Service is Salesforce's security architecture that isolates Lightning components in sandboxed environments. It restricts access to global objects, DOM APIs, and certain JavaScript features to prevent cross-component interference and XSS attacks.
+The Salesforce LWC uses third-party custom elements, including `<forcecal-main>`, backed by the browser Custom Elements API and Shadow DOM. Salesforce supports this with **Lightning Web Security**, not legacy **Lightning Locker**. See [Salesforce custom-element support](https://developer.salesforce.com/docs/platform/lwc/guide/create-use-custom-elements.html).
 
-## Restrictions and Solutions
+This page retains its historical URL so existing links still work. Earlier documentation claiming that the full Web Component integration was Locker-compatible was incorrect.
 
-### No eval() or Function()
+## Deployment requirements
 
-**Restriction:** `eval()`, `new Function()`, and `setTimeout(string)` are blocked.
+Enable LWS through your organization's approved Salesforce administration process, then test the matched LWC/Apex/static-resource build. A manual DOM container (`lwc:dom="manual"`) allows the component to insert the custom element; it does not bypass Locker restrictions or authorize data access.
 
-**Solution:** forceCalendar uses no dynamic code evaluation. All logic is in static modules. Template rendering uses programmatic DOM creation, not template strings.
+The production LWC loads a static resource with `lightning/platformResourceLoader`. It attaches listeners and sets properties before rendering the calendar. Custom events bubble and are composed so the host can receive them across Shadow DOM boundaries.
 
-### No innerHTML (security-critical paths)
+## Security remains layered
 
-**Restriction:** `innerHTML` assignments can be blocked or sanitized by Locker Service.
+- Use Apex for Salesforce record access; the controller enforces user-mode CRUD/FLS and sharing.
+- `readOnly` is an interaction setting, not a substitute for permissions.
+- Treat event titles/descriptions as plain text; do not inject them into HTML.
+- Validate your CSP and host styling behavior. The absence of `eval()` does not mean arbitrary `style-src` rules will permit all Interface styles.
+- Core calculation is separate from browser helpers: optional Workers and network/ICS helpers depend on host capabilities.
 
-**Solution:** View renderers use `document.createElement()`, `element.textContent`, and `element.appendChild()` for all DOM construction. No HTML strings are parsed.
-
-```js
-// What we do (safe)
-const div = document.createElement('div');
-div.className = 'fc-event';
-div.textContent = event.title;
-container.appendChild(div);
-
-// What we avoid (blocked by Locker)
-container.innerHTML = `<div class="fc-event">${event.title}</div>`;
-```
-
-### Restricted Global Access
-
-**Restriction:** Direct access to `window`, `document`, and `navigator` may be proxied or restricted.
-
-**Solution:** The core package has zero DOM dependencies. The interface package accesses DOM APIs only through component-scoped references (`this.shadowRoot`, `this.template`). The `AdaptiveMemoryManager` accesses `process.memoryUsage` through an indirect reference to avoid triggering Locker Service restrictions:
-
-```js
-// Indirect access pattern for Locker Service
-const getMemory = () => {
-  try {
-    const p = globalThis.process || {};
-    return typeof p.memoryUsage === 'function' ? p.memoryUsage() : null;
-  } catch {
-    return null;
-  }
-};
-```
-
-### No Dynamic import()
-
-**Restriction:** Dynamic `import()` is not available in Locker Service contexts.
-
-**Solution:** All imports are static ESM `import` statements resolved at bundle time. The LWC component uses dynamic `document.createElement()` for the custom element instead of dynamic imports.
-
-### Web Worker Limitations
-
-**Restriction:** Web Workers may not be available or may have restricted APIs.
-
-**Solution:** `SearchWorkerManager` detects Worker availability and falls back to `InvertedIndex` (synchronous, main-thread) when Workers are unavailable:
-
-```js
-// SearchWorkerManager automatically falls back
-if (typeof Worker === 'undefined') {
-  // Use InvertedIndex on the main thread
-  this.fallbackIndex = new InvertedIndex();
-}
-```
-
-### Shadow DOM
-
-**Restriction:** Locker Service enforces Shadow DOM boundaries more strictly than standard browsers.
-
-**Solution:** All events use `composed: true` to cross shadow boundaries:
-
-```js
-this.dispatchEvent(new CustomEvent('calendar-navigate', {
-  detail: { action, date },
-  bubbles: true,
-  composed: true, // Crosses Shadow DOM boundaries
-}));
-```
-
-### No External Network Requests
-
-**Restriction:** CSP headers in Salesforce block requests to external origins unless explicitly allowlisted.
-
-**Solution:** The core package makes no network requests. ICS URL subscription (`ICSHandler.subscribe()`) and `importFromURL()` should only be used in non-Salesforce contexts. In Salesforce, use the Apex controller for all data access.
-
-## Compatibility Checklist
-
-| Feature | Locker Service Safe | Notes |
-|---------|-------------------|-------|
-| Core Calendar API | Yes | Zero DOM dependency |
-| Event CRUD | Yes | Pure JS objects |
-| Recurrence expansion | Yes | Pure computation |
-| State management | Yes | Pure JS |
-| Date utilities | Yes | Uses `Intl.DateTimeFormat` |
-| ICS parsing | Yes | String processing only |
-| ICS URL import | No | Blocked by CSP; use Apex instead |
-| Full-text search | Partial | InvertedIndex works; Web Workers may not |
-| Web Components | Yes | Shadow DOM with `composed` events |
-| CSS theming | Yes | CSS custom properties inherit through Shadow DOM |
-| Adaptive memory | Yes | Indirect `process` access with fallback |
-| Drag and drop | Partial | Standard DOM events work; pointer events may be proxied |
-
-## Best Practices for Salesforce
-
-1. **Use the Apex controller for all data access.** Do not use `fetch()`, `XMLHttpRequest`, or ICS URL imports.
-
-2. **Deploy as static resources.** Bundle `@forcecalendar/core` and `@forcecalendar/interface` into single files and deploy as static resources.
-
-3. **Use `lwc:dom="manual"` for the custom element.** This is required because LWC templates cannot directly reference custom elements from static resources.
-
-4. **Test in Lightning Experience.** Locker Service behavior differs between Lightning Experience, the Salesforce mobile app, and development environments. Always test in the target environment.
-
-5. **Handle Worker fallback.** Expect `SearchWorkerManager` to use the `InvertedIndex` fallback. Design your search UX to work synchronously.
-
-6. **Avoid large event sets.** Without Web Workers, search and recurrence expansion run on the main thread. Keep event counts manageable (under 5000) for responsive UI.
+If the custom element fails to register, check the org's LWS setting, resource version and browser errors. Do not weaken security policies or claim support for Locker on the basis of a Jest test.

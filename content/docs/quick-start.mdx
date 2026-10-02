@@ -1,178 +1,89 @@
 ---
 title: Quick Start
-description: Get a working forceCalendar instance in under 5 minutes.
+description: Render a calendar, apply a snapshot, and listen without duplicating persistence.
 ---
 
-## Browser / Vanilla JS
+## Render a browser calendar
 
-Import the core package and create a calendar:
-
-```js
-import { Calendar } from '@forcecalendar/core';
-
-const calendar = new Calendar({
-  view: 'month',
-  date: new Date(),
-  weekStartsOn: 0,       // 0 = Sunday, 1 = Monday
-  locale: 'en-US',
-  timeZone: 'America/New_York',
-  showWeekNumbers: false,
-  showWeekends: true,
-  fixedWeekCount: true,   // Always show 6 weeks in month view
-  businessHours: {
-    start: '09:00',
-    end: '17:00',
-  },
-});
-```
-
-## Adding Events
-
-```js
-// Add a single event
-calendar.addEvent({
-  title: 'Team Standup',
-  start: new Date('2026-03-01T09:00:00'),
-  end: new Date('2026-03-01T09:30:00'),
-  location: 'Conference Room A',
-  color: '#4285f4',
-});
-
-// Add a recurring event
-calendar.addEvent({
-  title: 'Weekly Review',
-  start: new Date('2026-03-02T14:00:00'),
-  end: new Date('2026-03-02T15:00:00'),
-  recurring: true,
-  recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO;COUNT=12',
-});
-
-// Add an all-day event
-calendar.addEvent({
-  title: 'Company Holiday',
-  start: new Date('2026-03-15'),
-  allDay: true,
-  color: '#34a853',
-});
-```
-
-## Querying Events
-
-```js
-// Get events for a specific date
-const todayEvents = calendar.getEventsForDate(new Date());
-
-// Get events in a date range
-const marchEvents = calendar.getEventsInRange(
-  new Date('2026-03-01'),
-  new Date('2026-03-31')
-);
-
-// Query with filters
-const meetings = calendar.queryEvents({
-  categories: ['meeting'],
-  status: 'confirmed',
-  start: new Date('2026-03-01'),
-  end: new Date('2026-03-31'),
-});
-```
-
-## Navigation
-
-```js
-// Navigate between periods
-calendar.next();      // Next month/week/day (based on current view)
-calendar.previous();  // Previous month/week/day
-calendar.today();     // Jump to today
-
-// Switch views
-calendar.setView('week');
-calendar.setView('day');
-calendar.setView('month');
-calendar.setView('list');
-
-// Jump to a specific date
-calendar.goToDate(new Date('2026-06-15'));
-```
-
-## Listening to Events
-
-```js
-calendar.on('eventAdd', ({ event }) => {
-  console.log('Event added:', event.title);
-});
-
-calendar.on('navigate', ({ date, view }) => {
-  console.log(`Navigated to ${date} in ${view} view`);
-});
-
-calendar.on('viewChange', ({ view }) => {
-  console.log(`View changed to: ${view}`);
-});
-
-calendar.on('eventUpdate', ({ event, oldEvent }) => {
-  console.log('Event updated:', event.id, oldEvent);
-});
-
-calendar.on('eventRemove', ({ event }) => {
-  console.log('Event removed:', event.id);
-});
-```
-
-## Web Component Usage
-
-If using `@forcecalendar/interface`, drop the custom element into your HTML:
+Install Core 2.5.6 and Interface 1.9.0, then include the element:
 
 ```html
-<forcecal-main
-  view="month"
-  locale="en-US"
-  timezone="America/New_York"
-  week-starts-on="0"
-  height="600px"
-></forcecal-main>
+<forcecal-main id="calendar" view="month" date="2026-10-05" height="600px"></forcecal-main>
 ```
+
+In your browser entry module:
 
 ```js
 import '@forcecalendar/interface';
 
-const el = document.querySelector('forcecal-main');
+const calendar = document.querySelector('#calendar');
+calendar.events = [
+  {
+    id: 'planning',
+    title: 'Planning',
+    start: new Date(2026, 9, 5, 9),
+    end: new Date(2026, 9, 5, 10),
+    location: 'Room A',
+  },
+  {
+    id: 'offsite',
+    title: 'Team offsite',
+    allDay: true,
+    start: new Date(2026, 9, 6),
+    end: new Date(2026, 9, 7, 23, 59, 59, 999),
+  },
+];
 
-// Add events via the element API
-el.addEvent({
-  title: 'Meeting',
-  start: new Date('2026-03-01T10:00:00'),
-  end: new Date('2026-03-01T11:00:00'),
+calendar.addEventListener('calendar-events-set', ({ detail }) => {
+  console.log('Snapshot applied:', detail.added.length, 'new events');
 });
-
-// Listen for calendar events
-el.addEventListener('calendar-event-added', (e) => {
-  console.log('Added:', e.detail);
+calendar.addEventListener('calendar-event-updated', ({ detail }) => {
+  console.log('Local change to persist:', detail.event.id);
 });
 ```
 
-## Salesforce LWC Usage
+These examples deliberately construct local civil dates: JavaScript's month index is zero-based. The offsite covers October 6–7 inclusive. For API data, agree on the source timezone and all-day boundary before converting it.
 
-In a Lightning Web Component:
+Click an event to view its details, edit it, or confirm deletion. Those actions change local calendar state. Connect your own backend, handle rejected writes and refresh authoritative state; the npm Interface does not save to a server for you.
 
-```html
-<!-- myComponent.html -->
-<template>
-  <c-force-calendar
-    current-view="month"
-    record-id={recordId}
-    height="600px"
-  ></c-force-calendar>
-</template>
-```
+## Snapshots and range loading
+
+`events`/`setEvents()` reconcile a complete snapshot. A snapshot emits one `calendar-events-set`, not per-event mutation events, so loading server data does not trigger duplicate saves.
+
+Use `calendar-range-change` to request the visible window. It fires initially and after navigation/view changes; `{ start, end }` has an inclusive end and uses the browser's local timezone. Protect asynchronous requests from out-of-order responses:
 
 ```js
-// myComponent.js
-import { LightningElement, api } from 'lwc';
+let request = 0;
+async function loadRange(start, end) {
+  const current = ++request;
+  // Implement fetchEvents in your application with authorization and error handling.
+  const rows = await fetchEvents(start, end);
+  if (current === request && calendar.isConnected) calendar.events = rows;
+}
+calendar.addEventListener('calendar-range-change', ({ detail }) => {
+  loadRange(detail.start, detail.end).catch(console.error);
+});
+const initialRange = calendar.getVisibleRange();
+if (initialRange) loadRange(initialRange.start, initialRange.end).catch(console.error);
+```
 
-export default class MyComponent extends LightningElement {
-  @api recordId;
+For a single-event mutation use `addEvent`, `updateEvent` or `deleteEvent`. Listen to one spelling of each event: the legacy `-add` and current `-added` forms are aliases for the same mutation, not separate request/success stages.
+
+## Headless Core
+
+```js
+import { Calendar } from '@forcecalendar/core';
+
+const calendar = new Calendar({ view: 'month', date: new Date(2026, 9, 5) });
+try {
+  calendar.addEvent({
+    id: 'planning', title: 'Planning',
+    start: new Date(2026, 9, 5, 9), end: new Date(2026, 9, 5, 10),
+  });
+  console.log(calendar.getEventsForDate(new Date(2026, 9, 5)));
+} finally {
+  calendar.destroy();
 }
 ```
 
-The LWC wrapper handles Apex CRUD operations automatically via `@wire`.
+Core returns data and does not render a UI. Use the [React](/docs/adapters/react), [Vue](/docs/adapters/vue), or [Salesforce](/docs/salesforce) guide for those hosts. Continue with [Web Component methods](/docs/interface/web-components) and [migration](/docs/migration).

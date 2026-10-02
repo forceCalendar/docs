@@ -1,0 +1,43 @@
+---
+title: Human and agent calendars
+description: Private pre-release scope, durability contract, interoperability, and remaining validation.
+---
+
+## Availability
+
+Agent calendaring is a **private pre-release prototype**. There is no public npm installation or production-readiness claim on this page. It is an adapter over Core, not an AI model, an autonomous task executor, or a replacement for an external calendar provider.
+
+The product direction is one durable calendar shared by people and authorized agents, with explicit permissions and inspectable changes.
+
+## Implemented prototype capabilities
+
+- SQLite-backed calendars, events, membership and audit history on one trusted host
+- Owner, editor, reader and worker roles
+- Fixed-principal stdio MCP tools for event create/read/replace/cancel, conflicts and ICS export
+- Revision checks and idempotency keys for writes
+- Lease-based due-item claim/ack/retry with at-least-once delivery and a five-attempt dead state
+- ICS snapshot export and an authentication-required feed handler, plus a loopback-only server wrapper
+- Preview-first Google/Microsoft synchronization building blocks and durable mapping/checkpoint handling
+
+Event text is data. The adapter does not execute commands, evaluate event content, follow event URLs, invoke a model or wake an external worker. The host must arrange polling and authorized execution.
+
+## Current event contract
+
+The prototype accepts one-off timed events with explicit UTC offsets and seconds. Intervals are half-open `[start, end)`; adjacent appointments do not conflict. Recurrence, all-day events, attendee invitations, reminders, resources and business-hours rules are rejected by this adapter even when Core supports related concepts.
+
+Create/replace/cancel need idempotency keys; replace also checks the expected revision. A worker must deduplicate external effects by delivery identity. A crash after an external effect but before acknowledgment can repeat delivery. Cancellation cannot recall an already-running external action.
+
+## Integration status
+
+| Surface | Verified scope | Still required |
+| --- | --- | --- |
+| Local service and stdio MCP | Automated persistence, role, revision, lease, restart and conflict tests | Host operations, backups, retention and monitoring |
+| ICS | Escaping/folding, bounds and authentication checks | Actual client import/subscription behavior and authentication compatibility |
+| Google/Microsoft | Mocked provider requests and reconciliation tests | Explicit live-account authorization and real two-way validation |
+| Hosted pilot | Authenticated list/read path | Hosted create/update/delete validation and broader operational review |
+
+An ICS file import is a snapshot, not continuous two-way synchronization. The feed handler requires host authentication, TLS and routing; some native calendar clients cannot supply the required authentication. Do not remove authentication to make a client work.
+
+## Security responsibilities
+
+A deployment host owns authentication, role grants, credential handling, encryption/backup, audit retention, quotas and provider authorization. Do not put credentials in event descriptions or expose an unauthenticated feed. A preview is not permission to apply provider writes. Production availability and public setup instructions will be documented only after those boundaries are verified.

@@ -300,3 +300,11 @@ const occurrences = store.expandRecurringEvent(
 ### destroy()
 
 Clean up subscriptions and internal state.
+
+## Reconciliation and stable occurrence identity
+
+`store.reconcile(rows, { removeMissing: true })` retains unchanged objects and returns `{ added, updated, removed, unchanged }`. Updated entries have `{ event, oldEvent }`. It emits one batch notification when changes exist. Invalid data/duplicate IDs are validated before mutation; if the caller already opened a batch, the caller owns rollback on an application/comparator failure.
+
+An occurrence reference resolves to its recurring master. `resolveEventId(id)` resolves the identity; `getOccurrence(id, timezone?)` retrieves a specific occurrence. Do not write a clicked occurrence back as a replacement master.
+
+The store uses `RecurrenceEngineV2` by default and exposes lazy `iterateOccurrences(eventId, options)`, `getNextOccurrence(eventId, after, options)`, and `takeOccurrences(eventId, count, options)`. See [recurrence bounds and limitations](/docs/core/recurrence#lazy-occurrence-queries).

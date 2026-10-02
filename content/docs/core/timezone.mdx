@@ -1,178 +1,54 @@
 ---
 title: Timezone Support
-description: Full IANA timezone support via Intl API with DST handling and cross-timezone conversion.
+description: IANA formatting, legacy conversion conventions, UI limits, and recurrence verification.
 ---
 
-## Overview
+Core uses the runtime's `Intl.DateTimeFormat` timezone data. A JavaScript Date represents an instant; formatting that instant in another zone is different from reinterpreting a Date's wall-clock fields.
 
-forceCalendar uses the browser's `Intl.DateTimeFormat` API for timezone operations. There are no bundled timezone databases or polyfills -- this keeps the package size minimal and ensures timezone data stays up-to-date with the browser.
-
-Timezone support is spread across three classes:
-
-| Class | Role |
-|-------|------|
-| `TimezoneManager` | Singleton for timezone operations and IANA data |
-| `TimezoneDatabase` | IANA timezone data: names, regions, UTC offsets |
-| `DateUtils` | Static timezone conversion and DST methods |
-
-## TimezoneManager
-
-A singleton class that caches timezone operations for performance.
-
-`TimezoneManager` is an internal class -- it is not exported from `@forcecalendar/core`. Access it through a calendar instance via `calendar.timezoneManager`, or use the `Calendar` wrapper methods (`convertTimezone`, `toCalendarTimezone`, `fromCalendarTimezone`, `formatInTimezone`, `getTimezones`) shown below.
+## Format an instant safely
 
 ```js
-// Accessed via a Calendar instance
-const tz = calendar.timezoneManager;
+const instant = new Date('2026-10-05T13:00:00Z');
+const text = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short',
+}).format(instant);
 ```
 
-### Key Methods
-
-| Method | Description |
-|--------|-------------|
-| `getSystemTimezone()` | Detect the system's IANA timezone |
-| `convertTimezone(date, from, to)` | Convert a date between timezones |
-| `getTimezoneOffset(date, timezone)` | Get UTC offset in minutes |
-| `formatInTimezone(date, timezone, options)` | Format in a timezone |
-| `getCommonTimezones()` | List common timezones as `Array<{ value, label, offset }>` |
-| `isValidTimezone(tz)` | Check if a timezone string is valid |
-
-## Calendar Timezone API
-
-The `Calendar` class exposes these timezone methods:
-
-### setTimezone(timezone)
-
-Change the calendar's timezone. All view data, event queries, and date comparisons will use the new timezone.
+Core exposes `TimezoneManager` publicly:
 
 ```js
-calendar.setTimezone('Asia/Tokyo');
+import { TimezoneManager } from '@forcecalendar/core';
+const tz = TimezoneManager.getInstance();
+const offset = tz.getTimezoneOffset(new Date(), 'America/New_York');
 ```
 
-When the timezone changes:
-- All date-based indices are recalculated
-- View data is regenerated
-- The `timezoneChange` event fires with `{ timezone, previousTimezone }`
+## Calendar timezone API
 
-### getTimezone()
+| Method | Purpose |
+| --- | --- |
+| `setTimezone(timezone)` / `getTimezone()` | Configure/read Core's calendar zone |
+| `convertTimezone(date, from, to)` | Legacy wall-clock conversion between zones |
+| `toCalendarTimezone(date, from?)` | Convert to the configured calendar zone |
+| `fromCalendarTimezone(date, to?)` | Convert from the configured calendar zone |
+| `formatInTimezone(date, timezone?, options?)` | Format through the timezone manager |
+| `getTimezones()` | Common `{ value, label, offset }` descriptors |
 
-```js
-const tz = calendar.getTimezone(); // 'America/New_York'
-```
+`TimezoneManager` also exposes validation, offsets, DST/transition helpers and caches. See its [API reference](/docs/api/timezone-manager). `TimezoneDatabase` is an internal supporting class, not a package root export.
 
-### convertTimezone(date, fromTz, toTz)
+## Event fields and conversions
 
-Convert a date between any two IANA timezones.
+`timeZone` and `endTimeZone` retain event zone metadata; the latter can describe a different end zone. Core 2.5.6 preserves `endTimeZone` in `clone()` and `toObject()`. Invalid Event timezone identifiers throw.
 
-```js
-// What time is 9am New York in Tokyo?
-const tokyoTime = calendar.convertTimezone(
-  new Date('2026-03-01T09:00:00-05:00'),
-  'America/New_York',
-  'Asia/Tokyo'
-);
-// 2026-03-01T23:00:00+09:00
-```
+Legacy Event and `TimezoneManager.toUTC`/`fromUTC` APIs use wall-clock carrier conventions. In particular, do not assume `startUTC`/`endUTC` are a second universally host-independent encoding of the supplied timestamps, or apply those conversions twice to an already-normalized instant. Validate the relevant API against your input contract.
 
-### toCalendarTimezone(date, fromTz?)
+## Interface grid and visible range
 
-Convert a date to the calendar's configured timezone.
+The current Interface grid, editor display and `getVisibleRange()` use the browser's local timezone. The `timezone` attribute configures Core but does **not** change the grid into an arbitrary-zone view. `getVisibleRange().end` is inclusive.
 
-```js
-// Convert UTC time to calendar timezone
-const local = calendar.toCalendarTimezone(utcDate, 'UTC');
-```
+All-day values are civil dates, not instants: local start-of-day through the inclusive last day's 23:59:59.999. Use calendar-day arithmetic across DST transitions. Providers/ICS with exclusive ends and Salesforce's inclusive UTC-date representation need explicit adapters. See [date migration](/docs/migration#dates-and-timezones).
 
-### fromCalendarTimezone(date, toTz?)
+## Recurrence and DST
 
-Convert a date from the calendar's timezone to another timezone.
+Core 2.5.6 has a known `RecurrenceEngineV2` cross-host DST drift when the host zone differs from the event zone. See [recurrence status](/docs/core/recurrence#cross-host-dst-limitation). A future scoped recurrence fix must not be interpreted as a redesign of every legacy conversion API.
 
-### formatInTimezone(date, timezone?, options?)
-
-Format a date in a specific timezone.
-
-```js
-calendar.formatInTimezone(new Date(), 'Asia/Tokyo', {
-  weekday: 'long',
-  hour: 'numeric',
-  minute: 'numeric',
-});
-```
-
-### getTimezones()
-
-Returns an array of common timezone descriptors -- `Array<{ value, label, offset }>` -- where `value` is the IANA identifier. (Wraps `TimezoneManager.getCommonTimezones()`.)
-
-## Event Timezone Support
-
-Events can specify their own timezones independent of the calendar timezone:
-
-```js
-calendar.addEvent({
-  title: 'Cross-timezone Meeting',
-  start: new Date('2026-03-01T09:00:00'),
-  end: new Date('2026-03-01T10:00:00'),
-  timeZone: 'America/Los_Angeles',     // Start time is in LA
-  endTimeZone: 'America/New_York',     // End time is in NY (rare)
-});
-```
-
-### Event Timezone Methods
-
-```js
-// Get start time in any timezone
-const tokyoStart = event.getStartInTimezone('Asia/Tokyo');
-const nyEnd = event.getEndInTimezone('America/New_York');
-
-// Update times in a specific timezone
-event.updateTimes(
-  new Date('2026-03-01T09:00:00'),
-  new Date('2026-03-01T10:00:00'),
-  'Europe/London'
-);
-```
-
-## DST Handling
-
-### Detection
-
-```js
-DateUtils.isDST(new Date('2026-03-08'), 'America/New_York'); // false (before spring forward)
-DateUtils.isDST(new Date('2026-03-09'), 'America/New_York'); // true (after spring forward)
-```
-
-### Safe Arithmetic
-
-`DateUtils.addHoursWithDST()` accounts for DST transitions:
-
-```js
-// During spring forward (2am -> 3am), adding 1 hour to 1:30am gives 3:30am
-DateUtils.addHoursWithDST(
-  new Date('2026-03-08T01:30:00'),
-  1,
-  'America/New_York'
-);
-```
-
-### Recurrence and DST
-
-`RecurrenceEngineV2` pre-calculates DST transitions for expansion ranges using `findDSTTransitions()`. This ensures that a recurring 9:00 AM meeting stays at 9:00 AM wall-clock time across DST boundaries, rather than shifting by the offset change.
-
-## TimezoneDatabase
-
-Provides static data about IANA timezones. Like `TimezoneManager`, this class is internal and is not exported from `@forcecalendar/core` -- its data is surfaced through `calendar.getTimezones()` and `calendar.timezoneManager`.
-
-The database includes:
-- All IANA timezone identifiers
-- Timezone display names
-- UTC offsets
-- Region groupings (Americas, Europe, Asia, etc.)
-
-This class is used internally by `TimezoneManager` and the UI timezone selector.
-
-## Implementation Notes
-
-- Timezone operations rely entirely on `Intl.DateTimeFormat`. If the browser doesn't support a timezone, operations gracefully fall back to UTC.
-- `TimezoneManager` uses a singleton pattern. Multiple `Calendar` instances share the same manager and its cache.
-- Timezone conversions are cached within `TimezoneManager` for performance.
-- The `Event.occursOn(date)` method respects the event's `timeZone` property when checking date membership.
+Test the host timezone, event timezone, clock gaps/overlaps, exception dates and query bounds relevant to the deployment. Host `Intl` data may differ between runtime versions; keep runtimes maintained.

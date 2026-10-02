@@ -1,233 +1,176 @@
 ---
 title: Web Components
-description: The forcecal-main custom element -- attributes, API, events, and lifecycle.
+description: Snapshots, editing, read-only mode, dates, typed events, and lifecycle in Interface 1.9.
 ---
 
-## forcecal-main
+Interface **1.9.0** registers `<forcecal-main>` and `<forcecal-event-form>` when imported in a browser. Named imports from the same entry point also perform registration.
 
-The primary Web Component. Renders a full calendar with header navigation, view switching, and event display.
+```js
+import '@forcecalendar/interface';
+```
+
+| Attribute | JavaScript property | Meaning |
+| --- | --- | --- |
+| `view` | Use `setView(view)` | `month`, `week`, or `day` |
+| `date` | Use `setDate(date)` | Visible date |
+| `locale` | Attribute | BCP 47 locale |
+| `timezone` | Attribute | Core timezone configuration; does not change the browser-local grid |
+| `week-starts-on` | Attribute | `0`–`6`, Sunday through Saturday |
+| `height` | Attribute | CSS height |
+| `theme` | Attribute | Theme preset, including `slds` |
+| `readonly` | `readOnly` | Boolean interaction mode |
+| `show-color-picker` | `showColorPicker` | Explicit `false` hides the editor color picker |
+
+## Public methods
+
+| Method | Result |
+| --- | --- |
+| `addEvent(data)` / `updateEvent(id, updates)` | Event or `null` |
+| `deleteEvent(id)` | Boolean |
+| `getEvents()` | Event array |
+| `setEvents(events, { removeMissing? })` | Change set or `null` while queued |
+| `getVisibleRange()` | `{ start, end }` or `null` before initialization |
+| `setView(view)` / `setDate(date)` | Change view/date |
+| `next()` / `previous()` / `today()` | Navigate |
+| `destroy()` | Tear down owned state and resources |
+
+## Loading events
+
+`setEvents()` and the `events` property take a _complete snapshot_ and reconcile it with what the calendar already holds: unchanged events keep their instance, changed ones are replaced, new ones are added and events missing from the snapshot are removed (pass `{ removeMissing: false }` to keep them). The view re-renders at most once per snapshot.
+
+```js
+const calendar = document.querySelector('forcecal-main');
+
+// Declarative: reconcile with removeMissing: true
+calendar.events = rows;
+
+// Imperative: the change set is returned and dispatched as calendar-events-set
+const { added, updated, removed, unchanged } = calendar.setEvents(rows, { removeMissing: false });
+
+calendar.addEventListener('calendar-events-set', e => {
+  console.log(e.detail.added.length, 'added', e.detail.removed.length, 'removed');
+});
+```
+
+Rules of the road:
+
+- Every entry must be an object with an `id`; `null`/`undefined` clears the calendar and anything else that is not iterable throws a `TypeError` (nothing is applied).
+- No per-event `calendar-event-add`/`-update`/`-remove` events are dispatched for a snapshot, so listeners that persist user edits are not triggered by a data load.
+- Occurrences of a recurring series (the expanded instances found in view data, `getEventsInRange()` results and click events) are mapped back to their master, so displayed events can be echoed through a snapshot without collapsing the series.
+- Calls made before the element is connected (or after `destroy()`) are queued and replayed in order once it initialises; `setEvents()` returns `null` in that case and `events` reads back the queued snapshot.
+- `calendar-events-set` carries `{ events, added, updated, removed, unchanged }`; `updated` entries are `{ event, oldEvent }` pairs.
+
+### Recurring events
+
+Rendered chips of a recurring series carry occurrence ids (`<masterId>_<startMs>`). Clicking or selecting an occurrence resolves to its master (`stateManager.findEvent(id)`), while details retain the clicked occurrence's time. Built-in drag, resize, Edit and Delete are unavailable for recurring events: changing one occurrence or a whole series requires an explicit scope workflow, which is not supported yet. Host APIs remain available for applications that implement their own scoped editing.
+
+For instances already expanded by an external service (for example Salesforce),
+keep `recurring`/`recurrenceRule` unset and add
+`metadata: { forceCalendarRecurring: true }`. This explicit host marker disables
+built-in Edit/Delete/drag/resize while rendering the ordinary supplied event once;
+it does not generate occurrences or invent an RRULE. Hosts remain responsible for
+server-side recurrence mutation permissions. The standalone editor also declines
+recurring events; imperative host CRUD APIs retain their documented behavior.
+
+## Event details and editing
+
+Click an event, or focus it and press Enter/Space, to open its details: title, the displayed instance's date/time, location and available actions. Times use the browser's local display, as the calendar grid does. The calendar-owned dialog uses ordinary DOM nodes inside the calendar's shadow root, without a portal or the native Popover API.
+
+- **Edit** prefills the existing event. Save updates its stable id and emits the normal `calendar-event-update` / `calendar-event-updated` pair; it does not add a duplicate. Description, attendees, metadata and other host-owned fields are retained. Unchanged date inputs preserve the original full-precision instants, including DST-overlap times.
+- **Delete** first opens an explicit confirmation. Cancel or Escape returns to details; confirming emits the normal remove/deleted pair. Failed saves/deletes leave the draft or confirmation available to retry.
+- Close, backdrop click and Escape dismiss details; Tab stays inside the dialog and focus returns to the event (or Today after deletion). Cancelling the editor discards its draft. Navigation, teardown and enabling read-only mode dismiss active interactions.
+- If the event changes or disappears while being edited, the draft stays visible with an error and cannot overwrite the newer data. Close and reopen the event to edit its current state. Changes to unrelated events or host-owned metadata do not block a save.
+- Recurring details display the clicked occurrence's time, with a clear recurring-event notice. Built-in Edit/Delete are intentionally unavailable for recurring events until an explicit series/occurrence editing workflow is supported; host APIs remain available.
+
+The standalone `EventForm` also supports `edit(event)` and `open(start, end)` for prefilled editing and creation ranges. Its cancellable `save` event carries editable fields; a host can call `preventDefault()` and `showError(message)` to retain a failed draft. Its `close` event reports `{ restoreFocus }`. The main calendar wires these to its state manager automatically.
+
+## All-day date boundaries
+
+All-day editing uses date-only **Start date** and **Last day (inclusive)** fields.
+A same-day event uses the same date in both fields. This preserves Core's existing
+contract: local start-of-day through local 23:59:59.999 on the last included day.
+Dates are parsed as local civil dates, not UTC strings; DST days may span 23 or 25
+hours. Timed events retain exact instants, including unchanged DST-overlap times.
+Adapters for systems with an exclusive end date must convert that boundary using
+calendar-day arithmetic rather than a fixed 24-hour duration.
+
+## Optional editor color control
+
+The color picker remains visible by default. Hosts that cannot persist colors can use
+`<forcecal-main show-color-picker="false">` or `calendar.showColorPicker = false`.
+The explicit attribute value `false` hides it; `true`, an empty attribute, or removing
+the attribute shows it. Changing this option while editing keeps the unsaved draft.
+Hidden controls do not reset existing event colors. Standalone `EventForm` supports
+the same attribute and property.
+
+## Read-only interaction mode
+
+Set the boolean HTML attribute `readonly`, or the reflected JavaScript property `readOnly`, to disable built-in user editing. The default is `false`.
 
 ```html
-<forcecal-main
-  view="month"
-  date="2026-03-01"
-  locale="en-US"
-  timezone="America/New_York"
-  week-starts-on="0"
-  height="600px"
-></forcecal-main>
+<forcecal-main readonly view="week"></forcecal-main>
 ```
 
-## Observed Attributes
-
-These HTML attributes are reactive -- changes trigger re-renders.
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `view` | `string` | `'month'` | `'month'`, `'week'`, `'day'` |
-| `date` | `string` | Today | ISO date string |
-| `locale` | `string` | `'en-US'` | BCP 47 locale |
-| `timezone` | `string` | System | IANA timezone |
-| `week-starts-on` | `string` | `'0'` | 0=Sunday, 1=Monday |
-| `height` | `string` | `'800px'` | CSS height value |
-
 ```js
-const el = document.querySelector('forcecal-main');
-el.setAttribute('view', 'week');
-el.setAttribute('timezone', 'Asia/Tokyo');
+const calendar = document.createElement('forcecal-main');
+calendar.readOnly = true; // Can be set before registration/connection
+calendar.events = rows; // Snapshot hydration still works
+host.appendChild(calendar);
+calendar.readOnly = false; // Re-enable editing at any time
 ```
 
-## JavaScript API
+Attribute spelling is `readonly` (no hyphen); property spelling is `readOnly`. Like native boolean attributes, `readonly="false"` still enables it: remove the attribute or assign `calendar.readOnly = false` to turn it off. Framework adapters, including LWC, should assign the boolean property before inserting the element and whenever their option changes.
 
-### addEvent(eventData)
+- Disables New Event, form creation/saves, event dragging, resizing and drag-to-create in month/week/day views. Resize handles and details Edit/Delete actions are omitted and grids expose `aria-readonly`.
+- Keeps event details, mouse/keyboard event and date selection, grid focus navigation, view switching and date navigation available.
+- Enabling it closes the current details, deletion confirmation or event form, discards its unsaved edits, cancels an active drag/resize/creation gesture and releases the gesture's document listeners. Disabling it restores editing without duplicating listeners. Instances remain independent.
+- Host code can still call `setEvents()`, assign `events`, and call `addEvent()`, `updateEvent()` or `deleteEvent()`. Imperative CRUD retains its usual mutation notifications; snapshots still emit only `calendar-events-set`.
+
+This is a UI interaction option, **not a security or authorization boundary**. Host-provided editors/context menus must also honor the option, and applications must enforce permissions and validate all writes on the server.
+
+## Visible range
+
+`getVisibleRange()` returns the `{ start, end }` window the current view covers, including the leading and trailing other-month days of the month grid. `end` is inclusive (the last millisecond of the window), so the pair can be passed straight to a range query. The window is expressed in the browser's local time zone regardless of the `timezone` attribute, and it is computed from the date, view and week start alone, so it is cheap to call.
+
+`calendar-range-change` fires whenever the window changes (navigation, view switch, `week-starts-on`), after the `calendar-navigate`/`calendar-view-change` event that caused it, with `{ start, end, view, date }`. It is also announced once per attach, on the next macrotask after the element is connected, so listeners added right after `appendChild` (framework refs and effects, a lazy `customElements.define()`) receive it. `getVisibleRange()` is the source of truth if you need the window synchronously.
 
 ```js
-el.addEvent({
-  title: 'Meeting',
-  start: new Date('2026-03-01T10:00:00'),
-  end: new Date('2026-03-01T11:00:00'),
+calendar.addEventListener('calendar-range-change', async e => {
+  calendar.events = await api.fetchEvents(e.detail.start, e.detail.end);
 });
 ```
 
-### updateEvent(eventId, updates)
+## Lifecycle: detach and destroy
 
-```js
-el.updateEvent('evt_123', { title: 'Updated Meeting' });
-```
+Removing the element from the document releases its rendered tree, DOM listeners and view timers but keeps its state (view, date, events) and keeps dispatching `calendar-*` events for API calls, so a re-attach (framework reconciliation, portals, StrictMode double-mount) picks up where it left off. Attribute changes made while detached are applied to state and rendered on the next attach.
 
-### deleteEvent(eventId)
+`destroy()` tears the state manager and its owned Core Calendar down, including background maintenance timers (use Core 2.5.4 or later for full timer cleanup). Call it when you are finished with an element permanently; detaching alone intentionally preserves the calendar. Repeated calls are safe. Afterwards the public API no-ops or queues instead of throwing (`events` and `getEvents()` read the queued snapshot, `getVisibleRange()` is `null`, `setEvents()` queues, CRUD mutations return `null`/`false`, and navigation no-ops) and the next attach initialises a fresh calendar from the attributes and any queued snapshot.
 
-```js
-el.deleteEvent('evt_123');
-```
+## Events
 
-### getEvents()
+| Event                                              | `detail`                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------- |
+| `calendar-navigate`                                | `{ action: 'next' \| 'previous' \| 'today' \| 'goto', date }` |
+| `calendar-view-change`                             | `{ view }`                                                    |
+| `calendar-range-change`                            | `{ start, end, view, date }`                                  |
+| `calendar-events-set`                              | `{ events, added, updated, removed, unchanged }`              |
+| `calendar-event-add` / `calendar-event-added`      | `{ event }`                                                   |
+| `calendar-event-update` / `calendar-event-updated` | `{ event }`                                                   |
+| `calendar-event-remove` / `calendar-event-deleted` | `{ eventId }`                                                 |
+| `calendar-date-select`                             | `{ date }`                                                    |
+| `calendar-range-select`                            | `{ start, end }`                                              |
 
-Returns all events from the internal calendar instance.
+All events bubble and are composed.
 
-### setView(viewType)
+## TypeScript
 
-```js
-el.setView('week');
-```
+The package ships declarations generated from JSDoc plus DOM typings for the element, so `document.createElement('forcecal-main')` is a `ForceCalendarElement` and `addEventListener` is typed for every `calendar-*` event:
 
-### setDate(date)
+```ts
+import type { ForceCalendarElement, CalendarEvent } from '@forcecalendar/interface';
 
-```js
-el.setDate(new Date('2026-06-15'));
-```
-
-### next()
-
-Navigate to the next period.
-
-### previous()
-
-Navigate to the previous period.
-
-### today()
-
-Navigate to today.
-
-## Custom Events
-
-The component dispatches these `CustomEvent`s with `bubbles: true` and `composed: true` (crosses Shadow DOM boundaries).
-
-| Event | `detail` | When |
-|-------|----------|------|
-| `calendar-navigate` | `{ action, date }` | Navigation occurs |
-| `calendar-view-change` | `{ view }` | View type changes |
-| `calendar-event-add` | `{ event }` | Event creation requested |
-| `calendar-event-update` | `{ event }` | Event update requested |
-| `calendar-event-remove` | `{ eventId }` | Event deletion requested |
-| `calendar-event-added` | `{ event }` | Event was added |
-| `calendar-event-updated` | `{ event }` | Event was updated |
-| `calendar-event-deleted` | `{ eventId }` | Event was deleted |
-| `calendar-date-select` | `{ date }` | Date cell clicked |
-
-```js
-el.addEventListener('calendar-event-added', (e) => {
-  console.log('Event created:', e.detail.event);
-});
-
-el.addEventListener('calendar-date-select', (e) => {
-  console.log('Date selected:', e.detail.date);
+const calendar = document.createElement('forcecal-main');
+calendar.addEventListener('calendar-events-set', e => {
+  const added: CalendarEvent[] = e.detail.added;
 });
 ```
-
-## Template Structure
-
-The component renders this internal structure inside its Shadow DOM:
-
-```
-<div class="force-calendar">
-  <header class="fc-header">
-    <div class="fc-header-left">
-      <button class="fc-btn-today">Today</button>
-    </div>
-    <div class="fc-header-center">
-      <button class="fc-nav-arrow" data-action="previous">&lt;</button>
-      <h2 class="fc-title">March 2026</h2>
-      <button class="fc-nav-arrow" data-action="next">&gt;</button>
-    </div>
-    <div class="fc-header-right">
-      <button class="fc-btn fc-btn-primary" id="create-event-btn">+ New Event</button>
-      <div class="fc-view-buttons">
-        <button class="fc-view-button" data-view="month">Month</button>
-        <button class="fc-view-button" data-view="week">Week</button>
-        <button class="fc-view-button" data-view="day">Day</button>
-      </div>
-    </div>
-  </header>
-  <div class="fc-body">
-    <!-- View renderer output -->
-  </div>
-</div>
-```
-
-## BaseComponent
-
-All Web Components extend `BaseComponent`, which provides:
-
-### Lifecycle
-
-| Method | Called When |
-|--------|-----------|
-| `initialize()` | Component first connected to DOM |
-| `mount()` | After initialization |
-| `render()` | When state changes require a re-render |
-| `afterRender()` | After render completes |
-| `unmount()` | Component disconnected from DOM |
-| `cleanup()` | Final cleanup (remove listeners) |
-
-### State Management
-
-```js
-// Inside a component
-this.setState({ loading: true });
-const state = this.getState();
-```
-
-### Properties
-
-```js
-this.setProp('locale', 'en-US');
-const locale = this.getProp('locale');
-```
-
-### DOM Helpers
-
-```js
-// Query within shadow root
-const btn = this.$('.fc-btn-today');
-const allBtns = this.$$('.fc-btn');
-```
-
-### Event Emission
-
-```js
-// Emit a custom event that crosses shadow DOM boundaries
-this.emit('calendar-navigate', { date: new Date(), view: 'month' });
-```
-
-### Listener Management
-
-Listeners registered via `addListener()` are automatically cleaned up on disconnect:
-
-```js
-this.addListener(this.$('.fc-nav-arrow'), 'click', () => this.previous());
-```
-
-### Re-render Preservation
-
-`BaseComponent` preserves scroll positions and focus across re-renders. Before rendering, it saves the current scroll position and active element reference. After rendering, it restores both.
-
-## View Renderers
-
-Each view has a dedicated renderer that produces DOM content:
-
-### MonthViewRenderer
-
-Renders a grid of weeks. Each day cell shows up to 3 events with a "+N more" overflow indicator.
-
-- Pure JS rendering (no innerHTML) for Locker Service compatibility
-- Respects `weekStartsOn` configuration
-- Highlights today and selected date
-- Shows week numbers when enabled
-
-### WeekViewRenderer
-
-Renders a 7-day timeline with hourly slots.
-
-- All-day events displayed in a header row
-- Timed events positioned based on start/end times
-- Business hours highlighted
-- Overlap groups handled via `calculateEventPositions()`
-
-### DayViewRenderer
-
-Renders a single-day timeline with hourly slots.
-
-- Same layout principles as WeekViewRenderer
-- More detail per event (full title, time, location)
-- All-day events in header

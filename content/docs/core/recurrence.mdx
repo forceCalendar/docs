@@ -13,7 +13,7 @@ forceCalendar provides three classes for recurrence handling:
 | `RecurrenceEngine` | Static | Expand recurring events into occurrences |
 | `RecurrenceEngineV2` | Instance | Enhanced expansion with modified instances, DST, caching |
 
-All three follow RFC 5545 (iCalendar) for recurrence rule syntax and semantics.
+These implement RFC 5545 recurrence features with bounded expansion. Supported syntax is not a claim that every RFC combination or host timezone is fully conformant.
 
 ## RRuleParser
 
@@ -113,6 +113,7 @@ Expand a recurring event into occurrences within a date range.
 import { RecurrenceEngine } from '@forcecalendar/core';
 
 const event = {
+  id: 'weekly', title: 'Weekly review', recurring: true,
   start: new Date('2026-01-05T09:00:00'),
   end: new Date('2026-01-05T10:00:00'),
   recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO;COUNT=12',
@@ -128,11 +129,7 @@ const occurrences = RecurrenceEngine.expandEvent(
 // Returns array of Event-like objects, each with adjusted start/end dates
 ```
 
-Each occurrence is a clone of the original event with:
-- `start` and `end` adjusted to the occurrence date
-- `isOccurrence: true` flag
-- `originalEventId` referencing the recurring event
-- `occurrenceDate` for this specific occurrence
+The engine returns occurrence data with adjusted `start`/`end` and recurrence metadata such as `recurringEventId`. EventStore wraps rendered occurrences as Event objects carrying `isOccurrence`, `recurringEventId` and `occurrenceStart`. Do not conflate the raw engine result with a stored master or its rendered occurrence ID.
 
 Regardless of the `maxOccurrences` parameter, expansion is capped by a `MAX_OCCURRENCES_HARD_LIMIT` of **10,000** to prevent runaway expansion from malformed or unbounded rules.
 
@@ -254,3 +251,33 @@ FREQ=YEARLY;BYMONTH=11;BYDAY=4TH       4th Thursday in November
 FREQ=WEEKLY;BYDAY=MO;COUNT=10          10 Mondays
 FREQ=DAILY;UNTIL=20261231T235959Z      Daily until end of 2026
 ```
+
+## Lazy occurrence queries
+
+Both engines expose `iterateOccurrences(event, options)`, `nextOccurrence(event, after, options)` and `takeOccurrences(event, count, options)`. Use static methods on `RecurrenceEngine` or instance methods on `RecurrenceEngineV2`.
+
+```js
+import { RecurrenceEngine } from '@forcecalendar/core';
+const event = {
+  id: 'daily', title: 'Daily check', recurring: true,
+  start: new Date('2026-10-05T09:00:00Z'), end: new Date('2026-10-05T09:15:00Z'),
+  timeZone: 'UTC', recurrenceRule: 'FREQ=DAILY;COUNT=3',
+};
+const nextTwo = RecurrenceEngine.takeOccurrences(event, 2, {
+  after: event.start, inclusive: true, timezone: 'UTC',
+});
+```
+
+`after` and `before` are exclusive by default; `inclusive: true` includes both bounds. Bounds are valid Dates or timestamps. A generator is single-use. `takeOccurrences` caps the requested count at the 10,000 hard limit; bound consumers of an open-ended iterator explicitly.
+
+`nextOccurrence(event, after, options)` honors the complete event's COUNT/UNTIL/exceptions. The older `getNextOccurrence(currentDate, rule, timezone)` helper only steps a parsed rule and does not provide those series-query guarantees.
+
+EventStore exposes `iterateOccurrences(eventId, options)`, `getNextOccurrence(eventId, after, options)` and `takeOccurrences(eventId, count, options)` against stored masters, using V2 by default.
+
+## Cross-host DST limitation
+
+In Core **2.5.6**, `RecurrenceEngineV2` can drift when the host timezone differs from the event's named timezone across daylight-saving transitions. This affects a correctness boundary used by EventStore and EnhancedCalendar. A fix is under validation but is not part of this documented release baseline.
+
+Test your event zones, runtime host zones, date boundaries, exceptions and modified instances before relying on recurrence. Do not infer correctness from a benchmark speed result. Legacy `startUTC`/`endUTC` metadata and conversion helpers have their own wall-clock conventions; a recurrence fix must not be described as a redesign of all timezone APIs.
+
+Interface intentionally disallows built-in recurring edit/delete/drag/resize until an explicit series/occurrence workflow is supported.

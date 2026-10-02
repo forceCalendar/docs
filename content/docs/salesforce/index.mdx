@@ -1,83 +1,41 @@
 ---
 title: Salesforce Overview
-description: Using forceCalendar in Salesforce Lightning with LWC, Apex, and Locker Service.
+description: LWC and Apex integration over Salesforce Event, requiring Lightning Web Security.
 ---
 
-## Architecture
+The Salesforce integration connects the Interface Web Component to the standard `Event` object through an LWC and Apex controller. It is a **beta** release, separate from the npm packages.
 
-The Salesforce integration wraps `@forcecalendar/interface` in a Lightning Web Component (LWC) with an Apex controller for CRUD operations against the Salesforce `Event` standard object.
+**Lightning Web Security is required.** Legacy Lightning Locker does not support the third-party custom elements used here. See [LWS compatibility](/docs/salesforce/locker-service).
 
-```
-┌─────────────────────────────────────┐
-│  Lightning App Builder Page         │
-│  ┌───────────────────────────────┐  │
-│  │  c-force-calendar (LWC)      │  │
-│  │  ┌─────────────────────────┐  │  │
-│  │  │  forcecal-main          │  │  │
-│  │  │  (Web Component)        │  │  │
-│  │  └─────────────────────────┘  │  │
-│  │         ↕ DOM events          │  │
-│  │  ┌─────────────────────────┐  │  │
-│  │  │  @wire(getEvents)       │  │  │
-│  │  │  Apex imperative calls  │  │  │
-│  │  └─────────────────────────┘  │  │
-│  └───────────────────────────────┘  │
-│              ↕ Apex                  │
-│  ┌───────────────────────────────┐  │
-│  │  ForceCalendarController.cls │  │
-│  │  (WITH SECURITY_ENFORCED)    │  │
-│  └───────────────────────────────┘  │
-│              ↕ SOQL                  │
-│  ┌───────────────────────────────┐  │
-│  │  Event (Standard Object)     │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
-```
+## Data flow
 
-## Components
+`Event` records → user-mode Apex query → LWC snapshot → `<forcecal-main>`.
 
-### c-force-calendar (LWC)
+User create/edit/delete actions → guarded LWC handlers → user-mode Apex writes → refreshed authoritative records.
 
-The Lightning Web Component wrapper. Handles:
+The 0.3 integration bundles Core 2.5.6 and Interface 1.9.0. Deploy the LWC, controller and static resource together: the LWC now calls date-aware `createCalendarEvent` and `updateCalendarEvent` methods.
 
-- `@wire` integration for reactive event loading
-- Dynamic `forcecal-main` element creation (bypasses static module analysis)
-- Event CRUD via imperative Apex calls
-- SLDS-styled error display with retry
-- Loading spinner
-- Refresh button
+## Supported workflows
 
-### ForceCalendarController.cls
+- Month, week and day views with date navigation and refresh
+- Event creation, existing-event details/editing, cancellation and confirmed deletion
+- Location and description transport
+- Record-page filtering and creation: Contact/Lead use `WhoId`; supported other records use `WhatId`
+- Inclusive all-day start/last-day dates, including same-day events and timed conversion
+- Read-only UI/persistence guards and independent Apex permissions
+- Optional controller-only Access, Reader and Editor permission sets
 
-Apex controller with `with sharing` (respects sharing rules). Methods:
+Fetched snapshots do not trigger Apex writes. Writes retain record identity, queue changes for the same record, and reconcile rejected mutations. Native Salesforce recurring events are displayed but remain read-only here; use Salesforce Calendar for series/occurrence changes. Production color selection is hidden because no custom color field is mapped.
 
-| Method | Access | Description |
-|--------|--------|-------------|
-| `getEvents(start, end, recordId)` | `@AuraEnabled(cacheable=true)` | Query events in date range |
-| `createEvent(title, start, end, ...)` | `@AuraEnabled` | Create a new event |
-| `updateEvent(eventId, title, start, ...)` | `@AuraEnabled` | Update an existing event |
-| `deleteEvent(eventId)` | `@AuraEnabled` | Delete an event |
+## Start here
 
-All methods use `WITH SECURITY_ENFORCED` in SOQL and check `isCreateable()`, `isUpdateable()`, `isDeletable()` on the `Event` SObject.
+1. [Choose an installation/deployment route](/docs/salesforce/deployment).
+2. [Review permissions and platform scope](/docs/salesforce/permissions).
+3. Add **Force Calendar** in Lightning App Builder on an App, Home or Record page.
+4. Verify as the intended users before wider rollout.
 
-### forcecal-main
+## Verification boundaries
 
-The `@forcecalendar/interface` Web Component, deployed as a static resource and instantiated dynamically inside the LWC's `lwc:dom="manual"` container.
+The October 0.3 candidate passed 38 LWC tests in UTC, Los Angeles, Kolkata and Auckland using the real bundled Interface with mocked Apex transport. Isolated Apex tests exercise actual Reader/Editor sets, denial paths and sharing. Live synthetic Event tests verified timed CRUD, cancellation, refresh/navigation, inclusive all-day dates and all-day-to-timed conversion; fixtures were removed.
 
-## Quick Start
-
-```html
-<!-- In a Lightning component or app page -->
-<c-force-calendar
-  current-view="month"
-  record-id={recordId}
-  height="600px"
-></c-force-calendar>
-```
-
-The component automatically:
-1. Loads events from Salesforce via `@wire`
-2. Creates the `forcecal-main` element in `renderedCallback`
-3. Handles navigation and CRUD via Apex
-4. Shows SLDS spinner during loading
-5. Shows error messages with retry button on failure
+A restricted-user Lightning browser session and live forced network-failure scenario have not been verified. There is no comprehensive security audit or assistive-technology certification claim. See the [source verification record](https://github.com/forceCalendar/salesforce/blob/2148bb4f/docs/VERIFICATION.md) and [beta installation status](/docs/salesforce/deployment).

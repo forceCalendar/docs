@@ -27,6 +27,9 @@ export default async function Page(props: PageProps) {
       <DocsBody>
         <MDX components={getMDXComponents()} />
       </DocsBody>
+      <footer className="mt-8 border-t pt-4 text-sm text-fd-muted-foreground">
+        forceCalendar by <a href="https://dhanawada.org" className="underline underline-offset-4">N. R. Dhanawada</a>
+      </footer>
     </DocsPage>
   );
 }

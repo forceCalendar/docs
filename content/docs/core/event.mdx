@@ -11,6 +11,7 @@ The `Event` class represents a calendar event with full timezone support, attend
 import { Event } from '@forcecalendar/core';
 
 const event = new Event({
+  id: 'team-meeting',
   title: 'Team Meeting',
   start: new Date('2026-03-01T09:00:00'),
   end: new Date('2026-03-01T10:00:00'),
@@ -65,20 +66,17 @@ const normalized = Event.normalize({
 
 ### Event.validate(data)
 
-Validate event data. Returns `{ valid: boolean, errors: string[] }`.
+Validate normalized event data. Returns `void` and **throws an Error** on failure.
 
 ```js
-const result = Event.validate({ title: '', start: 'invalid' });
-// { valid: false, errors: ['Title is required', 'Invalid start date'] }
+const normalized = Event.normalize({
+  id: 'meeting', title: 'Meeting',
+  start: new Date(2026, 9, 5, 9), end: new Date(2026, 9, 5, 10),
+});
+Event.validate(normalized);
 ```
 
-Validation checks:
-- Title must be a non-empty string
-- Start must be a valid Date
-- End must be a valid Date
-- End must be after start (unless all-day)
-- Status must be one of the valid values
-- Visibility must be one of the valid values
+IDs, titles and start dates are required. Dates must be valid, and an end cannot precede the start (equal instants are allowed). Recurring events require a rule. Attendees and metadata also have validation/size constraints. Normalization defaults invalid status/visibility to supported values; it does not generate an ID. The constructor normalizes and validates its input.
 
 ### Event.fromObject(obj)
 
@@ -275,3 +273,11 @@ event.hasAnyCategory(['meeting', 'review']); // true if has either
 ### hasAllCategories(categories)
 
 Returns `true` if the event has all of the given categories.
+
+## Full-field snapshots and serialization
+
+Core 2.5.6 retains `endTimeZone` in `clone()` and `toObject()`, alongside supported event fields. `Event.isEquivalent(a, b)` compares the fields used by reconciliation, including nested host data; it is distinct from relying on object identity.
+
+All-day normalization uses local start-of-day through the inclusive last day's 23:59:59.999. Use civil-date parsing at an external adapter boundary; see [date migration](/docs/migration#dates-and-timezones).
+
+Occurrence Events produced by EventStore carry `isOccurrence`, `recurringEventId` and `occurrenceStart`, with stable IDs derived from the master and occurrence instant. `Event.occurrenceId(masterId, start)` and `Event.parseOccurrenceId(id)` support that identity contract. Reconciliation resolves occurrence references back to their master rather than replacing a recurring series with one visible instance.

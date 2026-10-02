@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "check:api": "node scripts/check-api-coverage.mjs",
-    "prebuild": "node scripts/check-api-coverage.mjs"
+    "prebuild": "npm test",
+    "check:content": "node scripts/check-content.mjs",
+    "check:examples": "node scripts/check-examples.mjs",
+    "test": "npm run check:api && npm run check:content && npm run check:examples"
   },
   "dependencies": {
     "fumadocs-core": "^15.8.0",
@@ -18,7 +21,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@forcecalendar/core": "^2.3.0",
+    "@forcecalendar/core": "2.5.6",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/mdx": "^2.0.13",
     "@types/node": "^22.0.0",

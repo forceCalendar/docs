@@ -133,7 +133,7 @@ Force a rebuild of the search index. Called automatically when events change.
 
 ## SearchWorkerManager
 
-Offloads search to a Web Worker for non-blocking performance on large datasets. Falls back to `InvertedIndex` on the main thread if Web Workers are unavailable (e.g., Salesforce Locker Service).
+Offloads search to a Web Worker for non-blocking performance on large datasets. Falls back to `InvertedIndex` on the main thread if Web Workers are unavailable (for example, a host that blocks Workers).
 
 ```js
 import { SearchWorkerManager } from '@forcecalendar/core';

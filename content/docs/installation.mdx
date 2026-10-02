@@ -1,146 +1,82 @@
 ---
 title: Installation
-description: Install and configure forceCalendar packages.
+description: Install the documented release set and choose a supported runtime.
 ---
 
-## Core Package
+## Pinned npm release set
+
+For a reproducible baseline:
 
 ```bash
-npm install @forcecalendar/core
+npm install @forcecalendar/core@2.5.6 @forcecalendar/interface@1.9.0
 ```
 
-The core package is published as pure ESM with no dependencies. It requires a JavaScript environment that supports ES modules.
+Core alone is useful for server-side computation:
 
-### Package Exports
+```bash
+npm install @forcecalendar/core@2.5.6
+```
 
-The package exposes the following entry points via `exports` in `package.json`:
+Add the adapter for your framework:
 
-| Import Path | Module |
-|------------|--------|
-| `@forcecalendar/core` | All exports (Calendar, Event, EventStore, etc.) |
-| `@forcecalendar/core/calendar` | Calendar class |
-| `@forcecalendar/core/events` | Event class |
-| `@forcecalendar/core/state` | StateManager class |
-| `@forcecalendar/core/search` | EventSearch class |
-| `@forcecalendar/core/ics` | ICSHandler class |
-| `@forcecalendar/core/types` | TypeScript type definitions |
+```bash
+npm install @forcecalendar/react@0.3.1
+# OR
+npm install @forcecalendar/vue@0.3.1
+```
 
-### Import Examples
+Keep the Core and Interface peers installed. React requires React 18 or later; Vue requires Vue 3.3 or later. Adapter 0.3 requires Interface 1.6 or later; its `readOnly` support requires Interface 1.8 or later. The documented release set above includes both features.
+
+## Core imports
+
+Core is ESM and has no runtime package dependencies. Use a maintained Node.js release for server workloads. `fetch`-based ICS helpers need a runtime with `fetch`, `AbortController` and the relevant network permissions; `downloadAsFile()` is browser-only. Optional search Workers have a synchronous fallback.
+
+| Import | Exports |
+| --- | --- |
+| `@forcecalendar/core` | Public classes, `VERSION`, and default `Calendar` |
+| `@forcecalendar/core/calendar` | `Calendar` |
+| `@forcecalendar/core/events` | `Event` |
+| `@forcecalendar/core/state` | `StateManager` |
+| `@forcecalendar/core/search` | `EventSearch` |
+| `@forcecalendar/core/ics` | `ICSHandler` |
+| `@forcecalendar/core/types` | Shared TypeScript types |
 
 ```js
-// Import everything
-import {
-  Calendar,
-  Event,
-  EventStore,
-  StateManager,
-  DateUtils,
-  ICSParser,
-  ICSHandler,
-  EventSearch,
-  RecurrenceEngine,
-  RecurrenceEngineV2,
-  RRuleParser,
-  EnhancedCalendar,
-  SearchWorkerManager,
-  InvertedIndex,
-} from '@forcecalendar/core';
-
-// Import specific modules (tree-shakeable)
-import { Calendar } from '@forcecalendar/core/calendar';
-import { Event } from '@forcecalendar/core/events';
-import { StateManager } from '@forcecalendar/core/state';
+import { Calendar, Event, TimezoneManager, ConflictDetector } from '@forcecalendar/core';
 import { ICSHandler } from '@forcecalendar/core/ics';
 ```
 
-## Interface Package
+`LRUCache`, `PerformanceOptimizer`, `AdaptiveMemoryManager` and `TimezoneDatabase` are internal utilities, not root exports. Do not deep-import unexported package paths.
 
-```bash
-npm install @forcecalendar/interface
-```
-
-The interface package provides Web Components that consume the core engine. It registers the `<forcecal-main>` custom element automatically on import.
+## Browser Interface
 
 ```js
 import '@forcecalendar/interface';
-// <forcecal-main> is now available in the DOM
 ```
 
-### Individual Imports
+This registers `<forcecal-main>` and `<forcecal-event-form>`. Named imports from the same entry point also run its registration side effects. Interface needs a browser DOM, Custom Elements and Shadow DOM; use the framework adapters for client-side registration during SSR rather than importing Interface in server-only code.
 
-```js
-import {
-  ForceCalendar,
-  BaseComponent,
-  MonthViewRenderer,
-  WeekViewRenderer,
-  DayViewRenderer,
-  EventBus,
-  eventBus,         // Singleton instance
-  StyleUtils,
-  DateUtils,
-  StateManager,
-} from '@forcecalendar/interface';
-```
-
-## Salesforce Deployment
-
-The Salesforce package is deployed as a Lightning Web Component with an Apex controller. It is not published on npm.
-
-### Prerequisites
-
-- Salesforce org with Lightning Experience enabled
-- API version 58.0 or higher
-- Read access to the `Event` standard object (or your custom object)
-
-### Deployment Steps
-
-1. Deploy the Apex controller: `ForceCalendarController.cls`
-2. Deploy the LWC component: `forceCalendar/`
-3. Deploy `@forcecalendar/core` and `@forcecalendar/interface` as static resources
-4. Add the component to a Lightning page via App Builder
-
-See the [Salesforce guide](/docs/salesforce) for detailed deployment instructions.
-
-## Browser Compatibility
-
-forceCalendar uses standard Web APIs with no polyfills required in modern browsers:
-
-| Feature | Used By | Minimum Support |
-|---------|---------|-----------------|
-| ES Modules | Core | All modern browsers |
-| `Intl.DateTimeFormat` | Timezone handling | All modern browsers |
-| `Map` / `Set` | EventStore, StateManager | All modern browsers |
-| `CustomEvent` | Interface events | All modern browsers |
-| `Shadow DOM` | Web Components | Chrome 53+, Firefox 63+, Safari 10+ |
-| `Web Workers` | SearchWorkerManager | All modern browsers (optional) |
-| `performance.memory` | AdaptiveMemoryManager | Chrome only (graceful fallback) |
-
-The core package works in Node.js 16+ for server-side usage and testing.
-
-## CDN Usage
-
-For quick prototyping without a build step:
-
-```html
-<script type="module">
-  import { Calendar } from 'https://esm.sh/@forcecalendar/core';
-
-  const calendar = new Calendar({ view: 'month' });
-</script>
-```
-
-## TypeScript Support
-
-Type definitions are included in the core package at `@forcecalendar/core/types`:
+Core declarations are generated from source. Interface also owns the global `HTMLElementTagNameMap` entry for `forcecal-main`:
 
 ```ts
-import type {
-  CalendarConfig,
-  CalendarState,
-  EventData,
-  RecurrenceRule,
-  ICSExportOptions,
-  SearchOptions,
-} from '@forcecalendar/core/types';
+import type { ForceCalendarElement } from '@forcecalendar/interface';
+const calendar: ForceCalendarElement = document.createElement('forcecal-main');
 ```
+
+See [Quick start](/docs/quick-start) for snapshot loading and [migration](/docs/migration) for readiness and cleanup.
+
+## Salesforce
+
+Use the Salesforce distribution or unlocked beta installer, not npm commands inside the org. Deploy matching LWC, Apex and static-resource versions together. The integration uses API 62.0 metadata and requires **Lightning Web Security**. Legacy Lightning Locker is unsupported.
+
+Follow [deployment](/docs/salesforce/deployment), then select the minimum appropriate [permissions](/docs/salesforce/permissions). No permission set is assigned automatically.
+
+## Compatibility checks
+
+Test your actual browser and host policies. In particular:
+
+- The Interface uses Shadow DOM styles and inline style properties. A strict `style-src` policy needs host-specific validation; absence of `eval()` alone does not establish full CSP compatibility.
+- The grid and visible range use the browser's local timezone even when `timezone` is configured.
+- An SSR-safe adapter does not make browser-only imperative methods callable on the server.
+- Read-only UI is separate from server authorization.
+- Agent/provider integrations have their own [pre-release boundaries](/docs/agent).

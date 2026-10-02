@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: '%s | forceCalendar',
   },
   description:
-    'Enterprise-grade calendar infrastructure for Salesforce and strict-CSP environments. Zero dependencies.',
+    'Calendar engine, Web Components, framework adapters, and Salesforce LWS integration.',
 };
 
 export default function Layout({ children }: { children: ReactNode }) {
