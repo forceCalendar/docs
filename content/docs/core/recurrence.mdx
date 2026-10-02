@@ -281,3 +281,7 @@ In Core **2.5.6**, `RecurrenceEngineV2` can drift when the host timezone differs
 Test your event zones, runtime host zones, date boundaries, exceptions and modified instances before relying on recurrence. Do not infer correctness from a benchmark speed result. Legacy `startUTC`/`endUTC` metadata and conversion helpers have their own wall-clock conventions; a recurrence fix must not be described as a redesign of all timezone APIs.
 
 Interface intentionally disallows built-in recurring edit/delete/drag/resize until an explicit series/occurrence workflow is supported.
+
+## Modified-instance query boundary
+
+V2 range filtering applies to the generated recurrence start before a stored start/end override is applied. A moved instance can therefore appear outside the requested window or change the returned ordering/duration. This is existing behavior: hosts requiring final-time filtering or ordering must apply that policy explicitly. Do not infer that every modified result remains bounded and sorted from the base iterator contract.
