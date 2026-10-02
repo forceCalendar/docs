@@ -13,7 +13,7 @@ forceCalendar provides three classes for recurrence handling:
 | `RecurrenceEngine` | Static | Expand recurring events into occurrences |
 | `RecurrenceEngineV2` | Instance | Enhanced expansion with modified instances, DST, caching |
 
-All three follow RFC 5545 (iCalendar) for recurrence rule syntax and semantics.
+These implement RFC 5545 recurrence features with bounded expansion. Supported syntax is not a claim that every RFC combination or host timezone is fully conformant.
 
 ## RRuleParser
 
@@ -113,6 +113,7 @@ Expand a recurring event into occurrences within a date range.
 import { RecurrenceEngine } from '@forcecalendar/core';
 
 const event = {
+  id: 'weekly', title: 'Weekly review', recurring: true,
   start: new Date('2026-01-05T09:00:00'),
   end: new Date('2026-01-05T10:00:00'),
   recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO;COUNT=12',
@@ -128,11 +129,7 @@ const occurrences = RecurrenceEngine.expandEvent(
 // Returns array of Event-like objects, each with adjusted start/end dates
 ```
 
-Each occurrence is a clone of the original event with:
-- `start` and `end` adjusted to the occurrence date
-- `isOccurrence: true` flag
-- `originalEventId` referencing the recurring event
-- `occurrenceDate` for this specific occurrence
+The engine returns occurrence data with adjusted `start`/`end` and recurrence metadata such as `recurringEventId`. EventStore wraps rendered occurrences as Event objects carrying `isOccurrence`, `recurringEventId` and `occurrenceStart`. Do not conflate the raw engine result with a stored master or its rendered occurrence ID.
 
 Regardless of the `maxOccurrences` parameter, expansion is capped by a `MAX_OCCURRENCES_HARD_LIMIT` of **10,000** to prevent runaway expansion from malformed or unbounded rules.
 
@@ -254,3 +251,62 @@ FREQ=YEARLY;BYMONTH=11;BYDAY=4TH       4th Thursday in November
 FREQ=WEEKLY;BYDAY=MO;COUNT=10          10 Mondays
 FREQ=DAILY;UNTIL=20261231T235959Z      Daily until end of 2026
 ```
+
+## Lazy occurrence queries
+
+Both engines expose `iterateOccurrences(event, options)`, `nextOccurrence(event, after, options)` and `takeOccurrences(event, count, options)`. Use static methods on `RecurrenceEngine` or instance methods on `RecurrenceEngineV2`.
+
+```js
+import { RecurrenceEngine } from '@forcecalendar/core';
+const event = {
+  id: 'daily', title: 'Daily check', recurring: true,
+  start: new Date('2026-10-05T09:00:00Z'), end: new Date('2026-10-05T09:15:00Z'),
+  timeZone: 'UTC', recurrenceRule: 'FREQ=DAILY;COUNT=3',
+};
+const nextTwo = RecurrenceEngine.takeOccurrences(event, 2, {
+  after: event.start, inclusive: true, timezone: 'UTC',
+});
+```
+
+`after` and `before` are exclusive by default; `inclusive: true` includes both bounds. Bounds are valid Dates or timestamps. A generator is single-use. `takeOccurrences` caps the requested count at the 10,000 hard limit; bound consumers of an open-ended iterator explicitly.
+
+`nextOccurrence(event, after, options)` honors the complete event's COUNT/UNTIL/exceptions. The older `getNextOccurrence(currentDate, rule, timezone)` helper only steps a parsed rule and does not provide those series-query guarantees.
+
+EventStore exposes `iterateOccurrences(eventId, options)`, `getNextOccurrence(eventId, after, options)` and `takeOccurrences(eventId, count, options)` against stored masters, using V2 by default.
+
+## V2 timezone contract
+
+Core **2.5.7** corrects V2's cross-host DST stepping. `options.timezone`, then `event.timeZone`, then UTC determines the calendar-step zone; `event.start` anchors the series. Generated `start` and `end` are occurrence instants. This covers V2, the default engine used by EventStore, and V2-based EnhancedCalendar expansion.
+
+```js
+import { RecurrenceEngineV2 } from '@forcecalendar/core';
+const event = {
+  id: 'ny-daily', title: 'Daily review', recurring: true,
+  start: new Date('2026-03-06T09:00:00-05:00'),
+  end: new Date('2026-03-06T09:30:00-05:00'),
+  timeZone: 'America/New_York', recurrenceRule: 'FREQ=DAILY;COUNT=5',
+};
+const occurrences = new RecurrenceEngineV2().takeOccurrences(event, 5, {
+  after: event.start, inclusive: true, timezone: 'America/New_York',
+});
+console.log(occurrences.map(({ start }) => start.toISOString()));
+// March 6–7 at 14:00Z, March 8–10 at 13:00Z: 09:00 in New York.
+```
+
+- Daily, weekly, monthly, yearly and subdaily calendar steps resolve in the recurrence zone. A nonexistent local time advances through the DST gap; that adjusted clock time carries forward. An overlap chooses the earlier instant. Subdaily calendar increments are not constant elapsed-duration increments.
+- Before instance overrides, duration remains the original `end - start` milliseconds. An override can change duration.
+- Floating RRULE `UNTIL`/`EXDATE` strings use the recurrence zone; `Z` values remain UTC. Date-based exception and modification matching uses that zone's calendar date.
+- `handleDST` is retained for compatibility; `true` and `false` now yield the same resolved instants. The option never selected elapsed-duration stepping.
+- Explicit invalid zones are rejected by helpers such as `getNextDate`; omitted zones retain local Date behavior in those helpers.
+
+The release was checked with 696 fixture/host combinations, plus the published package's runtime verification. That is scoped regression evidence, not complete RFC conformance. See the [released contract](https://github.com/forceCalendar/core/blob/v2.5.7/docs/recurrence-timezones.md).
+
+### Remaining limits
+
+`startUTC`/`endUTC` metadata still uses legacy conversions that may depend on the host timezone. Use `start`/`end` for the occurrence instants covered above. The legacy static `RecurrenceEngine` and every timezone API have not been redesigned.
+
+Year 0000/BCE offset handling and UTC-suffixed RRULE years 0000–0099 retain known limitations. Month-end selection and supported RRULE fields are unchanged. Interface still disables built-in recurring edit/delete/drag/resize until an explicit series/occurrence workflow is supported.
+
+## Modified-instance query boundary
+
+V2 range filtering applies to the generated recurrence start before a stored start/end override is applied. A moved instance can therefore appear outside the requested window or change the returned ordering/duration. This is existing behavior: hosts requiring final-time filtering or ordering must apply that policy explicitly. Do not infer that every modified result remains bounded and sorted from the base iterator contract.

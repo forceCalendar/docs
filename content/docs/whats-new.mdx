@@ -1,32 +1,46 @@
 ---
 title: What's New
-description: Release highlights across the forceCalendar packages
+description: Released changes, installer status, and current verification limits.
 ---
 
-## July 2026: performance, types, accessibility, adapters
+## October 2026 release update
 
-The biggest release wave since 1.0. Everything below is live on npm.
+This documentation snapshot covers Core **2.5.7**, Interface **1.9.0**, and React/Vue **0.3.1**, which are published npm packages. Salesforce unlocked package **0.3.0.1** is promoted and released.
 
-### Recurrence performance, fixed for real (core 2.1.70 → 2.3.0)
+### Core: named-zone recurrence, event fidelity and lifecycle
 
-Our own published benchmarks showed RRULE expansion up to 1,200x slower than the `rrule` library. Two releases fixed it:
+Core 2.5.6 preserves `endTimeZone` through `Event.clone()` and `toObject()`. Recent 2.5 releases also support full-field snapshot comparisons, stable recurring occurrence identity, lazy iterator/next/take queries, and calendar teardown. Core `reconcileEvents()` preserves unchanged event instances; Core `setEvents()` still clears/reloads unless `{ reconcile: true }` is requested. Always call `destroy()` when a server-side or long-lived calendar instance is no longer needed. See [event data](/docs/core/event) and [migration](/docs/migration).
 
-- **2.1.70** removed a timezone-cache pathology: the offset cache thrashed on multi-year series, rebuilding an `Intl.DateTimeFormat` for every occurrence. The worst case went from 209ms to under 1ms.
-- **2.3.0** added a numeric-iteration fast path: between DST transitions, daily and weekly stepping is pure timestamp arithmetic, with transition instants discovered by binary search and cached. Daily/weekly expansion now runs at roughly 2x of `rrule` (the [benchmark dashboard](https://benchmark.forcecalendar.org) tracks it publicly), with output verified byte-identical across 1,360 rule/timezone combinations.
+Core **2.5.7** fixes the V2 cross-host DST regression found during benchmarking. Calendar steps, floating RRULE dates and generated occurrence bounds use the recurrence zone. The release includes 696 fixture/host regression combinations. The [V2 contract](/docs/core/recurrence#v2-timezone-contract) preserves important limits: legacy UTC metadata/conversions, moved-instance bounds/order, ancient dates and unchanged RRULE feature coverage. Historical benchmark speed ratios are not universal correctness evidence.
 
-### TypeScript declarations everywhere (core 2.2.0, interface 1.2.0)
+### Interface: details, editing and confirmed deletion
 
-Both packages now ship `.d.ts` files generated from their JSDoc: typed APIs and autocompletion for TypeScript consumers, with no rewrite of the zero-dependency JavaScript source. Along the way, `TimezoneManager` and `ConflictDetector` — documented but previously unreachable — became real exports.
+Interface 1.9.0 adds event details, prefilled editing, explicit deletion confirmation, cancellation and Escape dismissal. Saves preserve the stable event ID and host-owned fields; stale drafts cannot overwrite a changed or removed event. Dialog focus is managed across close/delete flows.
 
-### Accessibility (interface 1.1.0)
+- All-day forms use **Start date** and **Last day (inclusive)**; a same-day event is valid.
+- `readOnly` blocks built-in editing, dragging, resizing and range creation while keeping navigation and details available.
+- Recurring event Edit/Delete/drag/resize remain disabled. Externally expanded instances can use `metadata.forceCalendarRecurring: true` without inventing an RRULE.
+- `showColorPicker = false` or `show-color-picker="false"` hides a color control that the host cannot persist, without resetting existing colors.
+- Snapshots, visible-range events, typed DOM APIs and detach/destroy behavior are documented in the [Web Component guide](/docs/interface/web-components).
 
-The month view now implements the WAI-ARIA grid pattern: roving tabindex, arrow-key navigation (with PageUp/PageDown month paging and focus preserved across re-renders), `aria-selected`/`aria-current`, and localized per-cell labels with event counts. Events in every view are keyboard-reachable labeled buttons, shell controls are labeled, and navigation is announced via a live region.
+The 1.9 release candidate passed 291 Interface tests. Browser and Salesforce validation cover specific workflows; this is not a blanket accessibility or security certification.
 
-### Framework adapters (new packages)
+### React and Vue: complete host integration
 
-- [`@forcecalendar/react`](/docs/adapters/react) — SSR-safe React wrapper; works in Next.js with no workarounds
-- [`@forcecalendar/vue`](/docs/adapters/vue) — SSR-safe Vue 3 wrapper; works in Nuxt out of the box
+Adapters 0.3.1 expose `events` snapshots, range loading callbacks, typed imperative handles, and `readOnly`. They register custom elements on the client for SSR. The actual published adapter artifacts passed against Core 2.5.7 / Interface 1.9.0: React 0.3.1 passed 37 tests on each of React 18 and React 19, and Vue 0.3.1 passed 33 tests, with Bundler/NodeNext type checks. Use the [React](/docs/adapters/react) or [Vue](/docs/adapters/vue) guide for the complete callback/emit contract and readiness handling.
 
-### Runs where others can't
+### Salesforce: real Event persistence and optional roles
 
-A new [examples repository](https://github.com/forcecalendar/examples) with runnable starters for Cloudflare Workers (server-side scheduling at the edge), Chrome MV3 extensions, SharePoint SPFx, ServiceNow Service Portal, and Atlassian Forge — see the [platforms page](https://forcecalendar.org/platforms).
+The 0.3 integration bundles Core 2.5.6 and Interface 1.9.0. It includes existing-event editing/deletion, record-context associations, explicit all-day civil-date transport, snapshot loading without write feedback, and optional Access/Reader/Editor sets. Lightning Web Security is required.
+
+Synthetic live Event tests verified create/read/edit/delete, cancellation, refresh/navigation persistence, same-day and multi-day all-day events, and all-day-to-timed conversion. Fixtures were removed. Restricted-user behavior is covered by isolated Apex tests; a restricted-user Lightning browser session has not been verified. See [installation](/docs/salesforce/deployment) and [permissions](/docs/salesforce/permissions) for the released installer and deployment checks.
+
+### Headless integration guidance
+
+The [headless API guide](/docs/agent) explains how to expose published calendar operations through an application's existing tools and backend. Integrators choose persistence, users and access controls. Agents can read and change calendar data within those permissions; forceCalendar does not choose or execute their work.
+
+## Earlier releases
+
+Core 2.2 and Interface 1.2 introduced generated TypeScript declarations. Core exports now include `TimezoneManager` and `ConflictDetector`. Earlier Interface releases added keyboard grid navigation and labeled controls; later work extended selection, snapshots and lifecycle handling.
+
+Core 2.1.70 and 2.3 introduced timezone caching and recurrence iteration optimizations. Historical results depend on the workload, runtime and correctness checks used at the time. Consult the [benchmark dashboard](https://benchmark.forcecalendar.org) for measured scenarios rather than treating a historical speed ratio as a product guarantee.

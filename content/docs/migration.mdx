@@ -1,0 +1,61 @@
+---
+title: Migration and compatibility
+description: Upgrade guidance for package versions, snapshots, events, dates, SSR, and Salesforce.
+---
+
+## Recommended release set
+
+Use Core **2.5.7**, Interface **1.9.0**, and React/Vue **0.3.1** together. Pin versions for rollout, commit the lockfile, and test your actual persistence callbacks before deployment. Salesforce 0.3.0.1 is released with a frozen Core 2.5.6 / Interface 1.9.0 bundle; the separate Core 2.5.7 npm release does not change that installer.
+
+## Snapshot loading replaces CRUD loops
+
+Use `element.setEvents(rows)` or `element.events = rows` for a server snapshot. Every item needs a stable ID. Missing events are removed unless `{ removeMissing: false }` is passed. Snapshots emit only `calendar-events-set`; do not synthesize mutation callbacks while hydrating.
+
+Adapter `events` props update by array identity. Replace the array (React state/memo or Vue ref/computed), rather than mutating it in place. Adapter `undefined` leaves state alone; use `[]` to clear. Raw element `events = null` clears the snapshot.
+
+## Subscribe once per mutation
+
+The Interface emits legacy and current spellings together: `calendar-event-add`/`calendar-event-added`, `-update`/`-updated`, `-remove`/`-deleted`. These are aliases, not separate request and server-success stages. Listen to one per action. Adapters expose only the current spellings.
+
+Persistence belongs to the host. Reject unauthorized writes server-side, keep the stable ID across saves, and reload confirmed data after an error. Protect async range fetches from overwriting a newer visible range.
+
+## Read-only mode
+
+Interface uses `readonly` as a boolean HTML attribute and `readOnly` as a boolean property. `readonly="false"` is still enabled. Remove the attribute or set `element.readOnly = false`.
+
+React/Vue 0.3.1 accept a boolean `readOnly` prop. Use Interface 1.8 or later. This blocks built-in interaction, not programmatic APIs or server writes. The Salesforce wrapper additionally guards its persistence callbacks and public `addEvent` method; Apex independently enforces permissions.
+
+## Event editor and recurrence
+
+Interface 1.9 adds details, prefilled editing and confirmed deletion. Existing IDs and non-editable event fields are retained. A concurrent change to an edited field blocks a stale save; reopen details to use the current event.
+
+Built-in recurring-event edit/delete/drag/resize is unavailable. Hosts supplying already-expanded instances should use `metadata: { forceCalendarRecurring: true }`, leaving `recurring` and `recurrenceRule` unset. This protects UI mutation without causing a second expansion. It is not server-side authorization.
+
+If your backend has no color field, set `showColorPicker = false` or `show-color-picker="false"`. Hiding it retains the existing color.
+
+## Dates and timezones
+
+- Timed events represent instants; agree on timezone interpretation at the boundary. An offset-free datetime or `new Date('YYYY-MM-DD')` is not a safe universal civil-date parser.
+- Core/Interface all-day values cover local start-of-day through **23:59:59.999 on the inclusive last day**. Use `new Date(year, monthIndex, day)` for local civil dates. A same-day event has the same start/last-day date.
+- External APIs and ICS often use an exclusive end date. Convert explicitly with calendar-day arithmetic; never assume every day lasts 24 hours.
+- The Salesforce adapter has separate `startDate`/`lastDay` civil-date transport. Its native UTC-date representation must not be shifted through the browser timezone or corrected by blindly subtracting a day.
+- `getVisibleRange()` has an inclusive end and uses the browser's local timezone. The Interface `timezone` attribute does not make the grid render in an arbitrary IANA zone.
+- Core 2.5.6 preserves `endTimeZone` during clone/serialization. Core 2.5.7 corrects [V2 named-zone stepping](/docs/core/recurrence#v2-timezone-contract) across host timezones. Legacy UTC metadata, moved-instance bounds and ancient-date limits remain separate; validate the API contract your integration uses.
+
+## Lifecycle and SSR
+
+Detach preserves state for reattachment. `destroy()` permanently releases owned Core state/timers; Core 2.5.4 or later is needed for complete timer cleanup. Reattaching a destroyed element initializes a fresh calendar and replays queued snapshots.
+
+Adapters register on the client. Await the ref's `whenReady()` before imperative methods, and use a client component for interactive Next.js usage. Interface 1.7+ owns the DOM tag-name type mapping; adapter structural event types no longer redeclare it.
+
+## Salesforce upgrade
+
+Deploy LWC, Apex and static resources together. The 0.3 LWC calls date-aware `createCalendarEvent`/`updateCalendarEvent`; installing only its JavaScript against an older controller is unsupported. Enable LWS, select an optional permission set deliberately, and test as intended users. Native Salesforce recurrence remains managed in Salesforce Calendar. See [deployment](/docs/salesforce/deployment).
+
+## Core 2.5.7 recurrence behavior
+
+V2 steps the calendar in the explicit recurrence zone, falling back to the event zone and then UTC. Use returned `start`/`end` as the generated occurrence instants. The legacy `startUTC`/`endUTC` fields and conversion helpers were not redesigned.
+
+`handleDST` remains accepted, but `true` and `false` now return the same correctly resolved instants: it previously toggled an additional post-step adjustment, not elapsed-duration arithmetic. Calendar increments advance through nonexistent local times and choose the earlier instant in an overlap. An adjusted gap time carries into subsequent steps.
+
+Explicit invalid zones now throw from stepping helpers such as `getNextDate`; previously those helpers ignored the zone. Stored overrides still apply after generated-start range filtering, and ancient-date/parser limits remain. Read the full [V2 contract](/docs/core/recurrence#v2-timezone-contract) before migrating integrations that relied on those details.

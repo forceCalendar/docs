@@ -5,7 +5,7 @@ description: Month, week, and day view rendering -- layout, event positioning, a
 
 ## Overview
 
-Each calendar view has a dedicated renderer class that produces DOM content for the `<forcecal-main>` component. Renderers use pure JavaScript DOM creation (no `innerHTML`) for Locker Service compatibility.
+Each calendar view has a dedicated renderer class that produces DOM content for the `<forcecal-main>` component. Renderers use pure JavaScript DOM creation (no `innerHTML`) to keep event text separate from HTML. Salesforce deployment requires LWS.
 
 ## MonthViewRenderer
 

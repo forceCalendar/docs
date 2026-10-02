@@ -40,7 +40,7 @@ new ICSHandler(calendar: Calendar)
 |--------|------|---------|
 | `dateRange` | `{ start: Date, end: Date }` | `undefined` |
 | `categories` | `string[]` | `[]` |
-| `calendarName` | `string` | `'Calendar'` |
+| `calendarName` | `string` | `'Lightning Calendar Export'` |
 | `includeRecurring` | `boolean` | `true` |
 | `expandRecurring` | `boolean` | `false` |
 
@@ -57,3 +57,9 @@ new ICSHandler(calendar: Calendar)
 ```ts
 { valid: boolean, errors: string[], eventCount: number }
 ```
+
+## URL transport options
+
+`importFromURL(url, options)` additionally accepts `requestTimeout` (default 30,000 ms), `maxRedirects` (5), and `maxFileSize` (parser default). This helper performs network requests and does not replace host egress controls. See [network boundaries](/docs/security/model#network-limits-matter).
+
+Keep the object returned by `subscribe()` and call `stop()` on teardown. Its initial import is asynchronous, and the subscription is in-process rather than durable provider synchronization.

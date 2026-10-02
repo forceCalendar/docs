@@ -1,68 +1,59 @@
 ---
 title: Server-Side Scheduling
-description: Use the headless engine in Node, serverless functions, and edge runtimes
+description: Bounded recurrence, ICS, cleanup, and runtime checks for headless applications.
 ---
 
-`@forcecalendar/core` is DOM-free, dependency-free, pure ES modules — it runs anywhere JavaScript does, including runtimes that ban `eval` and dynamic code such as Cloudflare Workers. That makes it a server-side scheduling engine, not just a UI companion.
+Core computation runs without a DOM and ships as ESM with no runtime package dependencies. That is useful in Node.js, serverless functions and compatible edge runtimes. Optional network/Worker/browser helpers still depend on their host APIs; verify the actual runtime and bundler.
 
-## What you can do server-side
-
-- **Expand recurrence rules** — turn an RFC 5545 RRULE into concrete occurrences for a date range
-- **Detect conflicts** — time, attendee, and resource overlap across event sets
-- **Import/export ICS** — parse calendar feeds and generate iCalendar files
-- **Search** — full-text queries across large event sets
-
-## Expanding recurrences in Node
+## Bounded recurrence queries
 
 ```js
 import { RecurrenceEngine } from '@forcecalendar/core';
 
-const occurrences = RecurrenceEngine.expandEvent(
-  {
-    id: 'standup',
-    title: 'Team Standup',
-    start: new Date('2026-01-05T09:00:00Z'),
-    end: new Date('2026-01-05T09:15:00Z'),
-    recurring: true,
-    recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR',
-    timeZone: 'America/New_York'
-  },
-  new Date('2026-01-01'),
-  new Date('2026-03-31'),
-  500 // max occurrences
-);
-// -> [{ start, end, recurringEventId, timezone, originalStart }, ...]
+const event = {
+  id: 'standup', title: 'Standup',
+  start: new Date('2026-10-05T09:00:00Z'),
+  end: new Date('2026-10-05T09:15:00Z'),
+  recurring: true, recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12',
+  timeZone: 'UTC',
+};
+const upcoming = RecurrenceEngine.takeOccurrences(event, 3, {
+  after: new Date('2026-10-01T00:00:00Z'),
+  before: new Date('2026-11-01T00:00:00Z'),
+  timezone: 'UTC',
+});
 ```
 
-Daily and weekly rules use a numeric fast path (pure timestamp arithmetic between DST transitions), so expanding multi-year series takes fractions of a millisecond — safe inside request handlers.
+This example deliberately uses UTC. Lazy queries avoid materializing an entire open-ended series, but still require explicit workload bounds. Do not assume every recurrence completes within a fixed request budget. See [iterator semantics](/docs/core/recurrence#lazy-occurrence-queries) and the [V2 timezone contract and limits](/docs/core/recurrence#v2-timezone-contract).
 
-## Generating ICS
+## Generate an ICS snapshot
 
 ```js
 import { Calendar, ICSHandler } from '@forcecalendar/core';
 
 const calendar = new Calendar({ timeZone: 'UTC' });
-calendar.addEvent({
-  id: 'evt-1',
-  title: 'Quarterly Review',
-  start: new Date('2026-04-01T14:00:00Z'),
-  end: new Date('2026-04-01T15:00:00Z'),
-  recurring: true,
-  recurrenceRule: 'FREQ=MONTHLY;INTERVAL=3;COUNT=4'
-});
-
-const ics = new ICSHandler(calendar).export({ calendarName: 'Reviews' });
-// -> "BEGIN:VCALENDAR..." — serve with Content-Type: text/calendar
+try {
+  calendar.addEvent({
+    id: 'review', title: 'Review',
+    start: new Date('2026-10-05T14:00:00Z'),
+    end: new Date('2026-10-05T15:00:00Z'),
+  });
+  const ics = new ICSHandler(calendar).export({ calendarName: 'Reviews' });
+  console.log(ics); // Serve as text/calendar using your host's response API.
+} finally {
+  calendar.destroy();
+}
 ```
 
-## Edge runtimes
+Always dispose owned Calendars/EventStores when finished, especially in jobs and tests. Stop any independent ICS subscription handles as well. File download helpers need a browser; return the ICS string from server routes instead.
 
-The engine deploys to Cloudflare Workers unmodified — see the runnable
-[Worker example](https://github.com/forcecalendar/examples/tree/main/cloudflare-worker-scheduling),
-which exposes `/occurrences` and `/ics` endpoints and includes a smoke test.
+## Deployment responsibilities
 
-## Timezones
+- Authorize access to calendar data before queries, exports or mutations.
+- Bound input size, event count, expansion windows, concurrency and response size.
+- Set egress policies for [ICS URL imports](/docs/security/model#network-limits-matter).
+- Test host/event timezone combinations and DST transitions; use occurrence `start`/`end` according to the engine's documented contract.
+- Keep IDs stable and use [reconciliation](/docs/core/calendar#snapshot-reconciliation) for data reloads.
+- Treat text as data; calendar storage does not authorize an agent to execute work.
 
-Expansion is timezone-aware per occurrence: pass an IANA `timeZone` on the event
-(or as the fifth argument to `expandEvent`) and DST transitions are handled for
-you, including half-hour and 45-minute offset zones.
+The [examples repository](https://github.com/forceCalendar/examples) contains platform starters, including server-side scheduling. A starter is not proof of production certification on every platform.

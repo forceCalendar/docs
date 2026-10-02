@@ -43,7 +43,7 @@ import '@forcecalendar/interface';
 // <forcecal-main> is now available
 ```
 
-Or import specific classes without auto-registration:
+Named imports from the same entry point also run custom-element registration:
 
 ```js
 import { ForceCalendar, BaseComponent, EventBus } from '@forcecalendar/interface';
@@ -64,3 +64,7 @@ import { ForceCalendar, BaseComponent, EventBus } from '@forcecalendar/interface
 | `DateUtils` | Date formatting utilities |
 | `DOMUtils` | DOM manipulation utilities |
 | `StateManager` | Interface package's own state management class (`src/core/StateManager.js`) that wraps the core `Calendar` |
+
+## Current interaction contract
+
+Interface 1.9 includes snapshots, visible-range callbacks, details/edit/delete dialogs, read-only interaction, recurring-event guards and explicit lifecycle cleanup. See [Web Components](/docs/interface/web-components) for the supported methods and limitations. The grid uses browser-local dates; the `timezone` attribute is not arbitrary-zone rendering. Salesforce requires LWS.

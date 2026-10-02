@@ -26,7 +26,7 @@ The parser enforces hard limits to prevent denial-of-service from oversized inpu
 | Maximum line count | 100,000 lines |
 | Maximum event count | 10,000 events |
 
-Inputs exceeding these limits throw an error before parsing begins.
+Oversized input is rejected before parsing; line/event limits are checked as the input is processed.
 
 ### parse(icsString)
 
@@ -106,7 +106,7 @@ The parser handles three RFC 5545 date formats:
 
 ## ICSHandler
 
-High-level ICS operations built on top of `ICSParser`. Requires a `Calendar` or `EventStore` instance.
+High-level ICS operations built on top of `ICSParser`. Requires a `Calendar`-compatible instance implementing its event methods; use a `Calendar` for the documented integration.
 
 ```js
 import { ICSHandler } from '@forcecalendar/core';
@@ -238,3 +238,9 @@ handler.downloadAsFile('monthly-calendar.ics', {
   calendarName: 'Monthly Export',
 });
 ```
+
+## URL imports and external clients
+
+`importFromURL` performs network requests, unlike pure parsing. Options include `requestTimeout` (30,000 ms), `maxRedirects` (5) and `maxFileSize` (parser default). Node validates DNS and redirect destinations; non-Node runtimes can follow redirects before final-response validation. Host egress/allowlisting remains necessary. See [network limits](/docs/security/model#network-limits-matter).
+
+`subscribe()` initially imports and can poll; retain its handle and call `stop()` during teardown. This is an in-process import helper, not a durable two-way provider sync service. An ICS file export/import is a snapshot, and all-day exclusive end dates need explicit conversion at an integration boundary.

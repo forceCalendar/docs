@@ -1,168 +1,38 @@
 ---
 title: Security Model
-description: Detailed security model -- input validation, output encoding, and trust boundaries.
+description: Trust boundaries for events, ICS networking, UI edits, and platform persistence.
 ---
 
-## Trust Boundaries
+## Treat event content as data
 
-```
-┌─────────────────────────────────────────┐
-│  Untrusted Input                        │
-│  ┌─────────────────────────────────┐    │
-│  │ User Input (event data, search) │    │
-│  │ External ICS files              │    │
-│  │ URL parameters                  │    │
-│  │ Theme CSS values                │    │
-│  └─────────┬───────────────────────┘    │
-│            │ Validation Layer            │
-│            ▼                             │
-│  ┌─────────────────────────────────┐    │
-│  │ Event.validate()                │    │
-│  │ Event.normalize()               │    │
-│  │ RRuleParser.parse()             │    │
-│  │ ICSParser.parse()               │    │
-│  │ StateManager (key stripping)    │    │
-│  │ StyleUtils.sanitizeColor()      │    │
-│  └─────────┬───────────────────────┘    │
-│            │ Trusted Internal State      │
-│            ▼                             │
-│  ┌─────────────────────────────────┐    │
-│  │ Calendar, EventStore, etc.      │    │
-│  └─────────┬───────────────────────┘    │
-│            │ Output Encoding             │
-│            ▼                             │
-│  ┌─────────────────────────────────┐    │
-│  │ textContent (no innerHTML)      │    │
-│  │ CSS custom properties           │    │
-│  │ CustomEvent dispatch            │    │
-│  └─────────────────────────────────┘    │
-└─────────────────────────────────────────┘
-```
+Titles, descriptions, locations, metadata, ICS files and recurrence rules may be untrusted. Validate at the application boundary and render text as text. Do not interpret event descriptions as commands, authorization or prompts to perform actions.
 
-## Input Validation Details
+`Event.normalize()` coerces/clones supported fields and applies limits. `Event.validate()` validates normalized data and **throws** on failure; it does not return a `{ valid, errors }` object. IDs, titles and starts are required. An end may equal its start, but may not precede it. A recurring event needs a rule. Host applications still need their own constraints.
 
-### Event Data
+## ICS resource limits
 
-`Event.validate()` checks:
+The parser defaults to a 50 MiB-sized input limit and also bounds line and event counts (100,000 lines and 10,000 events). String-length checks and transport byte limits are different units; do not use the default as your application upload quota. Apply a smaller appropriate limit before buffering untrusted input.
 
-| Check | Rule |
-|-------|------|
-| Title | Non-empty string |
-| Start | Valid Date (not NaN) |
-| End | Valid Date (not NaN) |
-| End > Start | End must be after start (unless allDay) |
-| Status | Must be `'confirmed'`, `'tentative'`, or `'cancelled'` |
-| Visibility | Must be `'public'`, `'private'`, or `'confidential'` |
+URL imports have timeout, redirect and response-size controls. They check the initial URL, disallow private/reserved address literals, and in Node validate resolved addresses and each redirect target.
 
-`Event.normalize()` applies safe defaults:
+### Network limits matter
 
-| Field | Default |
-|-------|---------|
-| `id` | `'evt_' + random hex` |
-| `title` | `'Untitled Event'` |
-| `end` | `start + 1 hour` |
-| `color` | `'#4285f4'` |
-| `status` | `'confirmed'` |
-| `visibility` | `'public'` |
+DNS validation and the subsequent fetch are separate operations. A host still needs egress controls/allowlisting to address DNS rebinding or other network policy requirements. In non-Node runtimes, redirects may be followed by the runtime before the final URL is checked; discarding a response body does not undo a request already made.
 
-### RRULE Strings
+Do not expose arbitrary user-supplied URL fetching as a trusted internal-network boundary. Use an approved fetch service or gateway when the deployment requires stricter guarantees. In Salesforce, use the Apex data layer and the org's approved integration mechanisms.
 
-`RRuleParser.parse()` validates:
+## UI and persistence
 
-- Frequency must be one of the 7 RFC 5545 values (defaults to `'DAILY'` if invalid)
-- Interval minimum is 1
-- COUNT and UNTIL are mutually exclusive (throws if both present)
-- BYMONTH clamped to 1-12
-- BYMONTHDAY clamped to -31 to 31, excluding 0
-- BYWEEKNO clamped to -53 to 53, excluding 0
-- BYYEARDAY clamped to -366 to 366, excluding 0
-- BYDAY must match valid weekday codes (SU, MO, TU, WE, TH, FR, SA)
+`readOnly` disables built-in editing but leaves host APIs available. Client-side attributes, DOM events and hiding controls are not authorization. Authorize and validate create/update/delete on the server, preserve stable IDs, and handle concurrent changes and rejected writes.
 
-### ICS Data
+Snapshots only hydrate local state. Mutation notifications mean local state changed, not that remote persistence succeeded. Subscribe to one legacy/current event spelling to avoid duplicate writes.
 
-The ICS parser handles:
+## Salesforce
 
-- Line unfolding (RFC 5545 continuation lines)
-- Text unescaping (`\\n` to newline, `\\,` to comma)
-- Multiple date format parsing with validation
-- Graceful handling of unknown properties (ignored, not thrown)
+The current controller uses `with sharing`, user-mode SOQL/DML, record-context checks and server-side recurring-event guards. Permission sets are optional and additive; Reader cannot revoke rights granted elsewhere. Access Activities has broader platform scope than this one calendar. See [permissions](/docs/salesforce/permissions).
 
-### State Updates
+LWS is required for the custom elements. Manual DOM insertion does not bypass Lightning Locker or change authorization.
 
-`StateManager.setState()`:
+## Application-exposed tools
 
-1. Strips `__proto__`, `constructor`, `prototype` from updates object
-2. Shallow-merges nested objects (`filters`, `businessHours`, `metadata`)
-3. Deep-equality checks to prevent no-op state transitions
-4. Deep-clones state before adding to undo/redo history
-
-### CSS Values
-
-`StyleUtils.sanitizeColor()` rejects:
-
-- Values containing `url(`
-- Values containing `expression(`
-- Values containing semicolons (multi-statement injection)
-- Values containing `javascript:` protocol
-- Empty or whitespace-only values
-
-## Output Encoding
-
-### DOM Rendering
-
-All view renderers use safe DOM APIs:
-
-```js
-// Safe: textContent escapes HTML entities
-element.textContent = event.title;
-
-// Safe: setAttribute escapes attribute values
-element.setAttribute('data-id', event.id);
-
-// Safe: createElement creates a typed element
-const div = document.createElement('div');
-```
-
-No renderer uses `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`.
-
-### Custom Events
-
-Events dispatched by Web Components use `CustomEvent` with structured data:
-
-```js
-new CustomEvent('calendar-event-added', {
-  detail: { event: event.toObject() },
-  bubbles: true,
-  composed: true,
-});
-```
-
-The `detail` property contains serialized data (via `toObject()`), never DOM references or executable code.
-
-## Rate Limiting and Resource Limits
-
-### Recurrence Expansion
-
-`RecurrenceEngine.expandEvent()` has a `maxOccurrences` parameter (default 365) that caps the number of occurrences generated. This prevents denial-of-service from rules like `FREQ=SECONDLY` or unbounded `FREQ=DAILY`.
-
-### Memory Management
-
-`AdaptiveMemoryManager` monitors memory usage:
-
-- **Warning threshold (80%)**: Reduces cache sizes by 25%
-- **Critical threshold (95%)**: Emergency clears all caches
-
-### History Limits
-
-`StateManager` limits undo/redo history to 50 entries. Older entries are discarded to prevent unbounded memory growth.
-
-### Cache Limits
-
-All LRU caches have fixed maximum sizes:
-
-| Cache | Default Max Size |
-|-------|-----------------|
-| Event cache | 500 |
-| Query cache | 100 |
-| Date range cache | 50 |
-| Occurrence cache (V2) | 100 |
+An agent-facing calendar tool uses the host application's authentication and permissions. Authorize each calendar operation and persist changes through the host's data layer. Event content does not give an agent permission to perform work. Protect provider credentials, bound URL imports and keep calendar data separate from executable instructions. See [headless integration guidance](/docs/agent).

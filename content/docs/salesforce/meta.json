@@ -5,6 +5,7 @@
     "lwc-integration",
     "apex-controller",
     "deployment",
+    "permissions",
     "locker-service"
   ]
 }

@@ -1,0 +1,49 @@
+---
+title: Headless Calendar APIs
+description: Embed calendar logic behind application and agent-facing tools with your own data and access controls.
+---
+
+## Calendar logic for your application
+
+forceCalendar is a calendar library. An application can expose its headless APIs through its existing backend, plugin or tool interface. An agent can then be an authorized client of those calendar operations, just as a human-facing application is.
+
+The integrator decides storage, users, authentication, permissions and the actions an agent may request. Core manages calendar data and calculations; the agent decides what to do with that information. Event descriptions are data, not instructions or authorization to execute work.
+
+## Published building blocks
+
+Core **2.5.7** is ESM, has no runtime package dependencies, and supplies these public APIs without requiring a calendar UI:
+
+| Operation | Library API |
+| --- | --- |
+| Read stored event data | `Calendar.getEvent()`, `getEvents()`, `getEventsInRange()` |
+| Load an application snapshot | `Calendar.reconcileEvents()` |
+| Create or change a calendar entry | `Calendar.addEvent()`, `updateEvent()`, `removeEvent()` |
+| Search events | `EventSearch` or `EnhancedCalendar.search()` |
+| Check conflicts | `ConflictDetector` and EventStore conflict methods |
+| Query recurring occurrences | `RecurrenceEngine` / `RecurrenceEngineV2` lazy and bounded expansion APIs |
+| Import/export iCalendar data | `ICSParser` and `ICSHandler` |
+
+See the [API reference](/docs/api), [server-side examples](/docs/core/server-side), and [snapshot contract](/docs/core/calendar#snapshot-reconciliation). A Core Calendar/EventStore is in-memory; choose and implement persistence in the host application.
+
+## Put tools behind the host's authorization
+
+A typical integration flow is:
+
+1. Resolve the caller using the host application's authentication.
+2. Check which calendar data and operation that caller may access.
+3. Load a bounded, authorized event snapshot into Core.
+4. Run the requested read or validated calendar mutation.
+5. Persist an authorized change through the application's data layer, with its concurrency and audit controls.
+6. Return calendar data or an explicit error; destroy owned Core instances when finished.
+
+This is an integration pattern, not a bundled server implementation. Core does not make external persistence happen when a local mutation method returns. Keep IDs stable, reject stale writes in the data layer, and never treat a UI callback or agent request as proof of authorization.
+
+## Dates, recurrence and exports
+
+Use explicit input contracts for timed instants and all-day civil dates. V2's named-zone recurrence behavior, legacy conversion metadata, moved-instance bounds and ancient-date limits are described in the [timezone contract](/docs/core/recurrence#v2-timezone-contract).
+
+Bound queries and expansions to the workload. An ICS import/export is a data interchange operation; any live account integration belongs in an authorized application adapter. URL imports require the [host network controls](/docs/security/model#network-limits-matter) described in the security guide.
+
+## Optional human interface
+
+Use [Interface](/docs/interface), [React](/docs/adapters/react), or [Vue](/docs/adapters/vue) when the application needs a visual calendar. The [Salesforce integration](/docs/salesforce) supplies its own LWC/Apex adapter. Human and agent clients can operate on the application's calendar data according to the same server-side permission rules.

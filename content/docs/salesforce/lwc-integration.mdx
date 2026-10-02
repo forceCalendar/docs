@@ -1,190 +1,61 @@
 ---
 title: LWC Integration
-description: Lightning Web Component wrapper -- @api properties, @wire, lifecycle, and event handling.
+description: Public component properties and methods, snapshots, persistence, and all-day transport.
 ---
 
-## Component Definition
+## Public properties
 
-The `forceCalendar` LWC wraps `forcecal-main` and bridges it with Salesforce.
-
-### @api Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `currentView` | `string` | `'month'` | Initial view type |
-| `height` | `string` | `'800px'` | Calendar height |
-| `recordId` | `string` | `null` | Related record ID for context-filtered events |
-| `readOnly` | `boolean` | `false` | Disable event creation/editing |
-
-```html
-<c-force-calendar
-  current-view="week"
-  record-id={recordId}
-  height="700px"
-  read-only
-></c-force-calendar>
-```
-
-### @api Methods
-
-| Method | Description |
-|--------|-------------|
-| `refreshEvents()` | Force reload events from Salesforce |
-| `addEvent(event)` | Programmatically add an event |
-| `setView(view)` | Change the view |
-| `goToDate(date)` | Navigate to a date |
-
-```js
-// From a parent component
-this.template.querySelector('c-force-calendar').refreshEvents();
-this.template.querySelector('c-force-calendar').setView('week');
-```
-
-## Reactive Data Loading
-
-Events are loaded via `@wire`:
-
-```js
-import getEvents from '@salesforce/apex/ForceCalendarController.getEvents';
-
-@wire(getEvents, {
-  startDateTime: '$startDate',
-  endDateTime: '$endDate',
-  recordId: '$recordId'
-})
-wiredEvents({ error, data }) {
-  if (data) {
-    this.events = data;
-    this.updateCalendarEvents();
-  } else if (error) {
-    this.error = error;
-  }
-}
-```
-
-The `$startDate` and `$endDate` reactive properties are updated when the user navigates, triggering automatic data refresh.
-
-## Dynamic Element Creation
-
-Due to Locker Service restrictions on static ES module imports of custom elements, the LWC creates `forcecal-main` dynamically:
-
-```js
-renderedCallback() {
-  if (this.calendarInitialized) return;
-
-  const container = this.template.querySelector('.calendar-container');
-  if (!container) return;
-
-  // Create the element dynamically to bypass static analysis
-  const calendarEl = document.createElement('forcecal-main');
-  calendarEl.setAttribute('view', this.currentView);
-  calendarEl.setAttribute('height', this.height);
-
-  // Attach event listeners
-  calendarEl.addEventListener('calendar-navigate', (e) => {
-    this.handleNavigate(e.detail);
-  });
-  calendarEl.addEventListener('calendar-event-add', (e) => {
-    this.handleEventAdd(e.detail);
-  });
-  // ... more listeners
-
-  container.appendChild(calendarEl);
-  this.calendarElement = calendarEl;
-  this.calendarInitialized = true;
-}
-```
-
-The `lwc:dom="manual"` directive on the container allows direct DOM manipulation:
-
-```html
-<div class="calendar-container" lwc:dom="manual"></div>
-```
-
-## Event Handling
-
-### Navigation
-
-When the user navigates in the calendar:
-
-```js
-handleNavigate(detail) {
-  const { date, view } = detail;
-  // Update wire parameters to trigger new data fetch
-  this.startDate = this.getViewStart(date, view);
-  this.endDate = this.getViewEnd(date, view);
-}
-```
-
-### CRUD Operations
-
-Event creation, update, and deletion use imperative Apex calls:
-
-```js
-import createEvent from '@salesforce/apex/ForceCalendarController.createEvent';
-
-async handleEventAdd(detail) {
-  try {
-    const result = await createEvent({
-      title: detail.event.title,
-      startDateTime: detail.event.start,
-      endDateTime: detail.event.end,
-      isAllDay: detail.event.allDay || false,
-      description: detail.event.description || '',
-      location: detail.event.location || '',
-    });
-    // Refresh to pick up the new event
-    this.refreshEvents();
-  } catch (error) {
-    this.showError(error);
-  }
-}
-```
-
-## Error Handling
-
-The component displays errors using SLDS styling:
-
-```html
-<template if:true={error}>
-  <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
-    <span class="slds-assistive-text">error</span>
-    <span class="slds-icon_container slds-icon-utility-error slds-m-right_x-small"></span>
-    <h2>{errorMessage}</h2>
-    <button class="slds-button slds-button_neutral" onclick={handleRetry}>
-      Retry
-    </button>
-  </div>
-</template>
-```
-
-## Template Structure
+| Property | Default | Purpose |
+| --- | --- | --- |
+| `currentView` | `month` | `month`, `week`, `day` |
+| `height` | `800px` | Calendar CSS height |
+| `recordId` | `null` | Related-record filtering and creation context |
+| `readOnly` | `false` | Disable UI mutations and LWC save callbacks |
 
 ```html
 <template>
-  <div class="slds-card">
-    <!-- Loading spinner -->
-    <template if:true={isLoading}>
-      <lightning-spinner alternative-text="Loading" size="medium">
-      </lightning-spinner>
-    </template>
-
-    <!-- Error display -->
-    <template if:true={error}>
-      <!-- Error alert with retry -->
-    </template>
-
-    <!-- Calendar container (manual DOM) -->
-    <div class="calendar-container" lwc:dom="manual"></div>
-
-    <!-- Refresh button -->
-    <div class="slds-p-around_x-small">
-      <lightning-button
-        label="Refresh"
-        onclick={handleRefresh}
-        icon-name="utility:refresh"
-      ></lightning-button>
-    </div>
-  </div>
+  <c-force-calendar current-view="week" height="700px"
+    record-id={recordId} read-only></c-force-calendar>
 </template>
 ```
+
+## Public methods
+
+| Method | Purpose |
+| --- | --- |
+| `refreshEvents()` | Refresh the wired Apex result |
+| `addEvent(event)` | Add through the component; blocked when read-only |
+| `setView(view)` | Change the visible view |
+| `goToDate(date)` | Change the visible date and fetch range |
+
+```js
+const calendar = this.template.querySelector('c-force-calendar');
+calendar.setView('week');
+calendar.refreshEvents();
+```
+
+## Loading and persistence
+
+`@wire(ForceCalendarController.getEvents)` receives the requested range and record context. Its result is applied with the Interface snapshot API, not a loop of event-create commands. Refresh and navigation therefore do not write the loaded records back to Salesforce.
+
+The LWC loads the combined static resource once, creates `forcecal-main` inside a manual DOM container, and applies `readOnly`/the production color-picker setting before use. LWS is required.
+
+Mutation handlers call `createCalendarEvent`, `updateCalendarEvent` and `deleteEvent`. Writes for the same record are serialized. Pending edits are preserved, temporary create IDs are mapped to Salesforce IDs, and failed writes restore confirmed state. Async results are scoped to their connection/range context so a late response does not replace a newer view.
+
+These handlers are integration details, not a second public API for applications to call directly. Listen only once per Interface mutation: legacy/current DOM event names are aliases.
+
+## All-day data boundary
+
+Timed events send `startDateTime` and `endDateTime` as instants. All-day events instead send `startDate` and **inclusive** `lastDay` as civil dates, with `isAllDay: true`. A same-day event is valid.
+
+The Apex controller maps those civil dates to Salesforce's native inclusive UTC-midnight representation. The LWC reconstructs local start-of-day/end-of-day for Interface. Do not shift all-day native values through the browser timezone, subtract a day, or use a fixed 24-hour conversion.
+
+## Record contexts and recurrence
+
+Contact and Lead context creation uses `WhoId`; supported other records use `WhatId`. Apex verifies object and record access and rejects unsupported/inaccessible contexts. A standalone own-calendar listing can omit inaccessible optional relationship fields.
+
+Native recurring events are marked with `metadata.forceCalendarRecurring` in the Interface, without adding a synthetic RRULE. Their Edit/Delete/drag/resize are disabled, and Apex independently refuses unsupported recurring mutations. Manage series and occurrences in Salesforce Calendar.
+
+## Errors and read-only behavior
+
+The component displays errors and supports refresh/retry. Read-only mode blocks built-in editing and the LWC's persistence callbacks/public `addEvent`; it does not revoke Salesforce permissions or constrain a separate host editor. See [permissions](/docs/salesforce/permissions) for authorization.

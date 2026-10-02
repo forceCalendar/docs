@@ -26,6 +26,7 @@ Unless marked internal, these classes are exported from `@forcecalendar/core`:
 | Class | Import | Description |
 |-------|--------|-------------|
 | [RecurrenceEngine](/docs/api/recurrence-engine) | `@forcecalendar/core` | Static recurrence expansion |
+| [RecurrenceEngineV2](/docs/api/recurrence-engine-v2) | `@forcecalendar/core` | Instance expansion and modified occurrences |
 | [RRuleParser](/docs/api/rrule-parser) | `@forcecalendar/core` | RRULE string parsing |
 
 ### ICS
@@ -46,12 +47,15 @@ Unless marked internal, these classes are exported from `@forcecalendar/core`:
 | Class | Import | Description |
 |-------|--------|-------------|
 | [EventSearch](/docs/api/event-search) | `@forcecalendar/core` | Full-text search |
+| [InvertedIndex](/docs/api/inverted-index) | `@forcecalendar/core` | Synchronous search index |
 | [SearchWorkerManager](/docs/api/search-worker-manager) | `@forcecalendar/core` | Web Worker search |
 
 ### Utilities
 
 | Class | Import | Description |
 |-------|--------|-------------|
+| [TimezoneManager](/docs/api/timezone-manager) | `@forcecalendar/core` | Timezone operations |
+| [ConflictDetector](/docs/api/conflict-detector) | `@forcecalendar/core` | Event conflict analysis |
 | [DateUtils](/docs/api/date-utils) | `@forcecalendar/core` | Static date utilities |
 
 ### Performance (internal)
@@ -67,7 +71,7 @@ These classes are documented for reference but are **not** exported from the `@f
 
 ```js
 // Everything from main entry
-import { Calendar, Event, EventStore, ... } from '@forcecalendar/core';
+import { Calendar, Event, EventStore, TimezoneManager, ConflictDetector } from '@forcecalendar/core';
 
 // Specific subpath exports
 import { Calendar } from '@forcecalendar/core/calendar';

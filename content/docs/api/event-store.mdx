@@ -94,3 +94,16 @@ new EventStore(options?: { timezone?: string })
 | Method | Signature | Returns |
 |--------|-----------|---------|
 | `destroy` | `() => void` | — |
+
+## Snapshot and occurrence APIs
+
+| Method | Purpose |
+| --- | --- |
+| `reconcile(events, options?)` | Diff a complete snapshot; return added/updated/removed/unchanged |
+| `resolveEventId(id)` | Resolve an occurrence identity to its master |
+| `getOccurrence(id, timezone?)` | Read the specific occurrence |
+| `iterateOccurrences(eventId, options?)` | Lazy single-use occurrence generator |
+| `getNextOccurrence(eventId, after?, options?)` | Next occurrence or null |
+| `takeOccurrences(eventId, count, options?)` | Bounded next occurrences |
+
+Reconcile options include `removeMissing` and `isEquivalent`. Lazy options include exclusive `after`/`before` bounds, `inclusive` and `timezone`. See the [store guide](/docs/core/event-store#reconciliation-and-stable-occurrence-identity).

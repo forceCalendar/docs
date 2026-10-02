@@ -44,3 +44,13 @@ Each expanded occurrence has:
 | `isOccurrence` | `boolean` | Always `true` |
 | `originalEventId` | `string` | ID of the recurring event |
 | `occurrenceDate` | `Date` | Date of this occurrence |
+
+## Lazy series queries
+
+| Static method | Result |
+| --- | --- |
+| `iterateOccurrences(event, options?)` | Single-use generator |
+| `nextOccurrence(event, after?, options?)` | Next occurrence or `null` |
+| `takeOccurrences(event, count, options?)` | Bounded occurrence array |
+
+Options include `after`, `before`, `inclusive` and `timezone`. Bounds are exclusive unless `inclusive: true`. Use `nextOccurrence` for COUNT/UNTIL/exception-aware queries; the older `getNextOccurrence` only steps a rule. See [lazy occurrence semantics](/docs/core/recurrence#lazy-occurrence-queries).

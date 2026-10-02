@@ -52,7 +52,9 @@ new Calendar(config?: CalendarConfig)
 | `removeEvent` | `(eventId: string) => void` | — |
 | `getEvent` | `(eventId: string) => Event \| undefined` | Event or undefined |
 | `getEvents` | `() => Event[]` | All events |
-| `setEvents` | `(events: EventData[]) => void` | — |
+| `setEvents` | `(events: EventData[], options?: SetEventsOptions) => EventsSetPayload` | Snapshot change set |
+| `reconcileEvents` | `(events: EventData[], options?: ReconcileOptions) => EventsSetPayload` | Reconciled change set |
+| `getEventsVersion` | `() => number` | Store change counter |
 | `queryEvents` | `(filters: QueryFilters) => Event[]` | Filtered events |
 | `getEventsForDate` | `(date: Date, timezone?: string) => Event[]` | Events on date |
 | `getEventsInRange` | `(start: Date, end: Date, timezone?: string) => Event[]` | Events in range |
@@ -123,3 +125,5 @@ new Calendar(config?: CalendarConfig)
 | `state` | `StateManager` | Internal state manager |
 | `timezoneManager` | `TimezoneManager` | Timezone singleton |
 | `config` | `object` | Resolved configuration |
+
+Core `setEvents()` clears/reloads by default; opt into `{ reconcile: true }` or call `reconcileEvents()`. Interface snapshots reconcile by default. See [snapshot reconciliation](/docs/core/calendar#snapshot-reconciliation).

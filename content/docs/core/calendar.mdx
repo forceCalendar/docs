@@ -453,3 +453,17 @@ calendar.destroy();
 ```
 
 Emits: `destroy`.
+
+## Snapshot reconciliation
+
+Core `setEvents(rows)` keeps its clear-and-reload default. Use `setEvents(rows, { reconcile: true })` or `reconcileEvents(rows, options)` to retain unchanged Event instances and apply only differences. Interface `setEvents()` already uses reconciliation by default.
+
+```js
+const result = calendar.reconcileEvents(rows, { removeMissing: true });
+// { events, added, updated: [{ event, oldEvent }], removed, unchanged }
+const version = calendar.getEventsVersion();
+```
+
+A snapshot emits one `eventsSet` with the change set and no `eventAdd`/`eventUpdate`/`eventRemove` callbacks. `removeMissing: false` preserves absent records. `isEquivalent` optionally replaces the comparison function. Duplicate IDs and invalid reconciliation input fail before mutation; occurrence references retain their master.
+
+`getEventsVersion()` reads the store's change counter. `destroy()` releases the owned EventStore and its maintenance resources; call it in server `finally` blocks or when permanently disposing an instance.

@@ -20,7 +20,7 @@ See [Event Model](/docs/core/event) for the full list of constructor properties.
 | Method | Signature | Returns |
 |--------|-----------|---------|
 | `normalize` | `(data: object) => EventData` | Normalized event data |
-| `validate` | `(data: object) => { valid: boolean, errors: string[] }` | Validation result |
+| `validate` | `(data: EventData) => void` | Throws on invalid normalized data |
 | `fromObject` | `(obj: object) => Event` | Event instance |
 
 ## Getters
@@ -92,3 +92,13 @@ See [Event Model](/docs/core/event) for the full list of constructor properties.
 | `hasCategory` | `(category: string) => boolean` | — |
 | `hasAnyCategory` | `(categories: string[]) => boolean` | — |
 | `hasAllCategories` | `(categories: string[]) => boolean` | — |
+
+## Snapshot and occurrence helpers
+
+| Static method | Purpose |
+| --- | --- |
+| `isEquivalent(a, b)` | Compare supported event fields for reconciliation |
+| `occurrenceId(masterId, start)` | Generate stable occurrence identity |
+| `parseOccurrenceId(id)` | Parse occurrence identity |
+
+Core 2.5.6 preserves `endTimeZone` through `clone()`/`toObject()`. See [full-field snapshots](/docs/core/event#full-field-snapshots-and-serialization).
